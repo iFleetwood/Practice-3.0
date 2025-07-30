@@ -16,24 +16,23 @@ import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.entity.ProjectileLaunchEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerPickupItemEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.Collection;
-import java.util.Map;
 import java.util.UUID;
 
 public class VanishListener implements Listener {
 
-    private final Map<Integer, UUID> sources;
-    private final Map<Location, UUID> particles;
     private final VanishManager vanishManager;
     private final Practice plugin;
 
     public VanishListener(Practice plugin, VanishManager vanishManager) {
         this.plugin = plugin;
         this.vanishManager = vanishManager;
-        this.sources = vanishManager.getSources();
-        this.particles = vanishManager.getParticles();
+
+        // Start cleanup task to prevent memory leaks
+        startCleanupTask();
     }
 
     @EventHandler
@@ -43,12 +42,12 @@ public class VanishListener implements Listener {
         }
 
         int id = event.getEntity().getEntityId();
-        sources.put(id, shooter.getUniqueId());
+        vanishManager.registerSource(id, shooter.getUniqueId());
     }
 
     @EventHandler
     public void onProjectileHit(ProjectileHitEvent event) {
-        sources.remove(event.getEntity().getEntityId());
+        vanishManager.unregisterSource(event.getEntity().getEntityId());
     }
 
     @EventHandler
@@ -61,18 +60,16 @@ public class VanishListener implements Listener {
             return;
         }
 
-        if (shooter.canSee(collided)) {
-            return;
+        if (!vanishManager.shouldShowSource(shooter.getUniqueId(), collided.getUniqueId())) {
+            event.setCancelled(true);
         }
-
-        event.setCancelled(true);
     }
 
     @EventHandler
     public void onPlayerDropItem(PlayerDropItemEvent event) {
         Player player = event.getPlayer();
         int id = event.getItemDrop().getEntityId();
-        sources.put(id, player.getUniqueId());
+        vanishManager.registerSource(id, player.getUniqueId());
     }
 
     @EventHandler(priority = EventPriority.HIGH)
@@ -84,24 +81,22 @@ public class VanishListener implements Listener {
             return;
         }
 
-        if (!sources.containsKey(id)) {
+        UUID sourceUUID = vanishManager.getSources().get(id);
+        if (sourceUUID == null) {
             return;
         }
 
-        UUID sourceUUID = sources.get(id);
-        Player sourcePlayer = Bukkit.getPlayer(sourceUUID);
-
-        if (sourcePlayer == null || player.canSee(sourcePlayer)) {
-            sources.remove(id);
+        if (!vanishManager.shouldShowSource(sourceUUID, player.getUniqueId())) {
+            event.setCancelled(true);
             return;
         }
 
-        event.setCancelled(true);
+        vanishManager.unregisterSource(id);
     }
 
     @EventHandler
     public void onItemDespawn(ItemDespawnEvent event) {
-        sources.remove(event.getEntity().getEntityId());
+        vanishManager.unregisterSource(event.getEntity().getEntityId());
     }
 
     @EventHandler
@@ -112,30 +107,53 @@ public class VanishListener implements Listener {
             return;
         }
 
-        // For cancelling packet
+        // Register particle location
         Location location = potion.getLocation();
-        Location blockLocation = new Location(location.getWorld(), location.getBlockX(), location.getBlockY(), location.getBlockZ());
-        particles.put(blockLocation, shooter.getUniqueId());
+        Location blockLocation = new Location(location.getWorld(),
+                location.getBlockX(),
+                location.getBlockY(),
+                location.getBlockZ());
+        vanishManager.registerParticle(blockLocation, shooter.getUniqueId());
 
+        // Clean up particle location after a tick
         new BukkitRunnable() {
             @Override
             public void run() {
-                particles.remove(blockLocation);
+                vanishManager.getParticles().remove(blockLocation);
             }
         }.runTaskLater(plugin, 1L);
 
-        // Removing healing from potion if shooter can't see affected player
+        // Filter potion effects based on visibility
         Collection<LivingEntity> affectedEntities = event.getAffectedEntities();
         for (LivingEntity affectedEntity : affectedEntities) {
             if (!(affectedEntity instanceof Player affectedPlayer)) {
                 continue;
             }
 
-            if (shooter.canSee(affectedPlayer)) {
-                continue;
+            if (!vanishManager.shouldShowSource(shooter.getUniqueId(), affectedPlayer.getUniqueId())) {
+                event.setIntensity(affectedEntity, 0);
             }
-
-            event.setIntensity(affectedEntity, 0);
         }
+    }
+
+    @EventHandler
+    public void onPlayerQuit(PlayerQuitEvent event) {
+        // Clean up all vanish data for leaving player
+        vanishManager.clearPlayer(event.getPlayer().getUniqueId());
+    }
+
+    /**
+     * Periodic cleanup to prevent memory leaks
+     */
+    private void startCleanupTask() {
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                // Clean up particles older than 5 seconds
+                vanishManager.cleanupParticles();
+
+                // Could add more cleanup logic here
+            }
+        }.runTaskTimer(plugin, 100L, 100L); // Every 5 seconds
     }
 }

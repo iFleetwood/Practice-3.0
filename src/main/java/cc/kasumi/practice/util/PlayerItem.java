@@ -24,6 +24,16 @@ public enum PlayerItem {
             name(CC.BLUE + "Unranked Queue").
             lore(CC.YELLOW + "Right click to join a queue")),
 
+    FFA_RANKED_QUEUE(new ItemBuilder(
+            Material.DIAMOND_AXE).
+            name(CC.GREEN + "Ranked FFA Queue").
+            lore(CC.YELLOW + "Right click to join FFA queue")),
+
+    FFA_UNRANKED_QUEUE(new ItemBuilder(
+            Material.IRON_AXE).
+            name(CC.BLUE + "Unranked FFA Queue").
+            lore(CC.YELLOW + "Right click to join FFA queue")),
+
     LEAVE_QUEUE(new ItemBuilder(
             Material.REDSTONE).
             name(CC.RED + "Leave Queue").

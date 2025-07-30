@@ -1,5 +1,6 @@
 package cc.kasumi.practice.game.queue;
 
+import cc.kasumi.practice.menu.SelectFFAQueueMenu;
 import cc.kasumi.practice.menu.SelectQueueMenu;
 import cc.kasumi.practice.player.PlayerState;
 import cc.kasumi.practice.player.PracticePlayer;
@@ -34,14 +35,14 @@ public class QueueListener implements Listener {
             return;
         }
 
-        if (clicked.equals(PlayerItem.KIT_EDITOR.getItem())) { // Maybe do it another way, instead of building it every time??
-            // Open ranked queue menu
+        if (clicked.equals(PlayerItem.KIT_EDITOR.getItem())) {
+            // Open kit editor menu
             // player.openInventory(new KitEditorMenu().getInventory(player));
         }
 
-        else if (clicked.equals(PlayerItem.RANKED_QUEUE.getItem())) { // Maybe do it another way, instead of building it every time??
+        else if (clicked.equals(PlayerItem.RANKED_QUEUE.getItem())) {
             // Open ranked queue menu
-            if (true) return;
+            if (true) return; // Temporarily disabled
 
             new SelectQueueMenu(true).openMenu(player);
         }
@@ -50,7 +51,15 @@ public class QueueListener implements Listener {
             new SelectQueueMenu(false).openMenu(player);
         }
 
-         else if (clicked.equals(PlayerItem.LEAVE_QUEUE.getItem())) {
+        else if (clicked.equals(PlayerItem.FFA_RANKED_QUEUE.getItem())) {
+            new SelectFFAQueueMenu(true).openMenu(player);
+        }
+
+        else if (clicked.equals(PlayerItem.FFA_UNRANKED_QUEUE.getItem())) {
+            new SelectFFAQueueMenu(false).openMenu(player);
+        }
+
+        else if (clicked.equals(PlayerItem.LEAVE_QUEUE.getItem())) {
             PracticePlayer practicePlayer = PracticePlayer.getPracticePlayer(uuid);
 
             if (practicePlayer.getPlayerState() != PlayerState.QUEUEING) {

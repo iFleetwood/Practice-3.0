@@ -10,6 +10,7 @@ import cc.kasumi.practice.game.ladder.Ladder;
 import cc.kasumi.practice.game.queue.Queue;
 import cc.kasumi.practice.game.queue.QueuePlayer;
 import cc.kasumi.practice.game.queue.QueueType;
+import cc.kasumi.practice.game.queue.type.FFAQueue;
 import cc.kasumi.practice.player.PlayerState;
 import cc.kasumi.practice.player.PracticePlayer;
 import cc.kasumi.practice.util.GameUtil;
@@ -19,12 +20,13 @@ import org.bukkit.event.inventory.ClickType;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
 import static cc.kasumi.practice.PracticeConfiguration.*;
 
-public class SelectQueueMenu extends Menu {
+public class SelectFFAQueueMenu extends Menu {
 
     private boolean ranked;
 
@@ -32,13 +34,13 @@ public class SelectQueueMenu extends Menu {
         setAutoUpdate(true);
     }
 
-    public SelectQueueMenu(boolean ranked) {
+    public SelectFFAQueueMenu(boolean ranked) {
         this.ranked = ranked;
     }
 
     @Override
     public String getTitle(Player player) {
-        return (this.ranked ? CC.GREEN + "Ranked" : CC.BLUE + "Unranked") + " queue";
+        return (this.ranked ? CC.GREEN + "Ranked" : CC.BLUE + "Unranked") + " FFA Queue";
     }
 
     @Override
@@ -46,31 +48,36 @@ public class SelectQueueMenu extends Menu {
         Map<Integer, Button> buttons = new HashMap<>();
 
         for (Queue queue : Practice.getInstance().getQueueManager().getQueues().values()) {
-            // Only show SOLO queues, not FFA queues
-            if (queue.getType() != QueueType.SOLO) continue;
+            if (queue.getType() != QueueType.FFA) continue;
             if (queue.isRanked() != this.ranked) continue;
 
-            buttons.put(queue.getLadder().getDisplaySlot() - 1, new SelectLadderButton(queue));
+            buttons.put(queue.getLadder().getDisplaySlot() - 1, new SelectFFALadderButton((FFAQueue) queue));
         }
 
         return buttons;
     }
 
     @AllArgsConstructor
-    private class SelectLadderButton extends Button {
+    private class SelectFFALadderButton extends Button {
 
-        private Queue queue;
+        private FFAQueue queue;
 
         @Override
         public ItemStack getButtonItem(Player player) {
             Ladder ladder = queue.getLadder();
-
             TypeData typeData = ladder.getDisplayType();
 
             return new ItemBuilder(
                     typeData.getType(), typeData.getData()).
-                    name(MAIN_COLOR + ladder.getDisplayName()).
-                    lore(CC.YELLOW + "Right click to join queue").
+                    name(MAIN_COLOR + ladder.getDisplayName() + " FFA").
+                    lore(Arrays.asList(
+                            CC.YELLOW + "Right click to join FFA queue",
+                            "",
+                            CC.GRAY + "Queue status: " + CC.WHITE + queue.getQueueStatus(),
+                            CC.GRAY + "Minimum players: " + CC.WHITE + queue.getMinPlayers(),
+                            "",
+                            queue.getReadyStatusMessage()
+                    )).
                     flag(ItemFlag.HIDE_POTION_EFFECTS).build();
         }
 
@@ -87,13 +94,21 @@ public class SelectQueueMenu extends Menu {
                 return;
             }
 
+            if (queue.isFull()) {
+                player.sendMessage(ERROR_COLOR + "This FFA queue is currently full!");
+                return;
+            }
+
             player.closeInventory();
 
-            queue.getPlayers().add(new QueuePlayer(player.getUniqueId()));
+            queue.addPlayer(new QueuePlayer(player.getUniqueId()));
             practicePlayer.setPlayerState(PlayerState.QUEUEING);
             practicePlayer.setCurrentQueue(queue);
-            player.sendMessage(MAIN_COLOR + "Added you to " + (queue.isRanked() ? "ranked " : "unranked ") + SEC_COLOR + queue.getLadder().getDisplayName() + MAIN_COLOR + " queue!");
-            player.getOpenInventory().close();
+
+            String queueType = queue.isRanked() ? "ranked " : "unranked ";
+            player.sendMessage(MAIN_COLOR + "Added you to " + queueType + SEC_COLOR + queue.getLadder().getDisplayName() +
+                    MAIN_COLOR + " FFA queue! " + SEC_COLOR + "(" + queue.getQueueStatus() + ")");
+
             player.getInventory().setContents(GameUtil.getQueueContents());
         }
     }

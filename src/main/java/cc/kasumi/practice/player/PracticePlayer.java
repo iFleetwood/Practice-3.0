@@ -6,6 +6,7 @@ import cc.kasumi.practice.game.duel.DuelRequest;
 import cc.kasumi.practice.game.ladder.Ladder;
 import cc.kasumi.practice.game.match.Match;
 import cc.kasumi.practice.game.queue.Queue;
+import cc.kasumi.practice.vanish.VanishUtil;
 import lombok.Getter;
 import lombok.Setter;
 import org.bson.Document;
@@ -29,13 +30,10 @@ public class PracticePlayer {
 
     private PlayerElo elo;
 
-    @Setter
     private PlayerState playerState;
     @Setter
     private Queue currentQueue;
-    @Setter
     private Match currentMatch;
-    @Setter
     private Match spectatingMatch;
 
     @Setter
@@ -110,5 +108,37 @@ public class PracticePlayer {
 
     public static PracticePlayer getPracticePlayer(UUID uuid) {
         return Practice.getInstance().getPlayers().get(uuid);
+    }
+
+    // Enhanced setters with vanish integration
+    public void setPlayerState(PlayerState newState) {
+        PlayerState oldState = this.playerState;
+        this.playerState = newState;
+
+        // Update vanish when player state changes
+        Player player = getPlayer();
+        if (player != null && player.isOnline()) {
+            VanishUtil.updatePlayerVanish(player);
+        }
+    }
+
+    public void setCurrentMatch(Match match) {
+        this.currentMatch = match;
+
+        // Update vanish when match changes
+        Player player = getPlayer();
+        if (player != null && player.isOnline()) {
+            VanishUtil.updatePlayerVanish(player);
+        }
+    }
+
+    public void setSpectatingMatch(Match match) {
+        this.spectatingMatch = match;
+
+        // Update vanish when spectating changes
+        Player player = getPlayer();
+        if (player != null && player.isOnline()) {
+            VanishUtil.updatePlayerVanish(player);
+        }
     }
 }

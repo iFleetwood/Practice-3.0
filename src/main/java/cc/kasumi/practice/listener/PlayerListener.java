@@ -5,6 +5,7 @@ import cc.kasumi.commons.util.PlayerUtil;
 import cc.kasumi.practice.Practice;
 import cc.kasumi.practice.player.PracticePlayer;
 import cc.kasumi.practice.util.GameUtil;
+import cc.kasumi.practice.vanish.VanishUtil;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -65,6 +66,9 @@ public class PlayerListener implements Listener {
         player.teleport(player.getWorld().getSpawnLocation());
         PlayerUtil.resetPlayer(player);
         player.getInventory().setContents(GameUtil.getLobbyContents());
+
+        // Use enhanced vanish system for automatic visibility management
+        VanishUtil.updatePlayerVanish(player);
     }
 
     @EventHandler(priority = EventPriority.HIGH)
@@ -80,6 +84,8 @@ public class PlayerListener implements Listener {
 
         players.get(uuid).save(true);
         players.remove(uuid);
+
+        // Enhanced vanish cleanup is automatically handled by VanishListener
     }
 
     @EventHandler(priority = EventPriority.HIGH)

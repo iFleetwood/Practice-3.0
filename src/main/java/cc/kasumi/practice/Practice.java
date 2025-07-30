@@ -4,10 +4,8 @@ import cc.kasumi.commons.config.ConfigCursor;
 import cc.kasumi.commons.config.FileConfig;
 import cc.kasumi.commons.mongodb.MCollection;
 import cc.kasumi.commons.mongodb.MDatabase;
+import cc.kasumi.practice.command.*;
 import cc.kasumi.practice.game.match.cache.CacheManager;
-import cc.kasumi.practice.command.ArenaCommand;
-import cc.kasumi.practice.command.DuelCommand;
-import cc.kasumi.practice.command.ViewInvCommand;
 import cc.kasumi.practice.game.arena.Arena;
 import cc.kasumi.practice.game.arena.ArenaManager;
 import cc.kasumi.practice.game.arena.ArenaState;
@@ -15,10 +13,10 @@ import cc.kasumi.practice.game.duel.DuelManager;
 import cc.kasumi.practice.game.ladder.Ladder;
 import cc.kasumi.practice.game.match.MatchListener;
 import cc.kasumi.practice.game.match.MatchManager;
+import cc.kasumi.practice.game.queue.*;
 import cc.kasumi.practice.game.queue.Queue;
-import cc.kasumi.practice.game.queue.QueueListener;
-import cc.kasumi.practice.game.queue.QueueManager;
-import cc.kasumi.practice.game.queue.QueueType;
+import cc.kasumi.practice.game.queue.type.FFAQueue;
+import cc.kasumi.practice.game.queue.type.SoloQueue;
 import cc.kasumi.practice.listener.*;
 import cc.kasumi.practice.player.PracticePlayer;
 import cc.kasumi.practice.scoreboard.ScoreboardManager;
@@ -33,8 +31,6 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 @Getter
 public final class Practice extends JavaPlugin {
@@ -115,11 +111,17 @@ public final class Practice extends JavaPlugin {
         for (Ladder ladder : ladders.values()) {
             String ladderName = ladder.getName();
 
+            // Create ranked queues
             if (ladder.isRanked()) {
-                queues.put(ladderName + "_ranked", new Queue(ladderName + "_ranked", QueueType.SOLO, ladder, true));
+                queues.put(ladderName + "_ranked", new SoloQueue(ladderName + "_ranked", ladder, true));
+                queues.put(ladderName + "_ffa_ranked", new FFAQueue(ladderName + "_ffa_ranked", ladder, true));
+                // Example: queues.put(ladderName + "_2v2_ranked", new PartyQueue(ladderName + "_2v2_ranked", ladder, true, 2));
             }
 
-            queues.put(ladderName + "_unranked", new Queue(ladderName + "_unranked", QueueType.SOLO, ladder, false));
+            // Create unranked queues
+            queues.put(ladderName + "_unranked", new SoloQueue(ladderName + "_unranked", ladder, false));
+            queues.put(ladderName + "_ffa_unranked", new FFAQueue(ladderName + "_ffa_unranked", ladder, false));
+            // Example: queues.put(ladderName + "_2v2_unranked", new PartyQueue(ladderName + "_2v2_unranked", ladder, false, 2));
         }
     }
 
@@ -154,6 +156,10 @@ public final class Practice extends JavaPlugin {
         paperCommandManager.registerCommand(new DuelCommand(duelManager));
         paperCommandManager.registerCommand(new ArenaCommand(arenaManager));
         paperCommandManager.registerCommand(new ViewInvCommand(cacheManager));
+        paperCommandManager.registerCommand(new FFACommand(matchManager));
+        paperCommandManager.registerCommand(new QueueDebugCommand());
+        paperCommandManager.registerCommand(new SpectatorCommand()); // Add spectator support
+        paperCommandManager.registerCommand(new VanishTestCommand());
     }
 
     private void savePracticeData() {

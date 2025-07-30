@@ -147,8 +147,6 @@ public class CachedInventory extends Menu {
                         build();
 
                 buttons.put(51, new EmptyButton(itemStack));
-
-                Bukkit.broadcastMessage(itemStack.getAmount() + "");
             }
         }
 
