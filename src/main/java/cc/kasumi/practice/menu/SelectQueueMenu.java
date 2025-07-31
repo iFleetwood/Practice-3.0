@@ -101,7 +101,14 @@ public class SelectQueueMenu extends Menu {
             queue.getPlayers().add(queuePlayer);
             practicePlayer.setPlayerState(PlayerState.QUEUEING);
             practicePlayer.setCurrentQueue(queue);
-            player.sendMessage(MAIN_COLOR + "Added you to " + (queue.isRanked() ? "ranked " : "unranked ") + SEC_COLOR + queue.getLadder().getDisplayName() + MAIN_COLOR + " queue!");
+            
+            if (queue.isRanked()) {
+                player.sendMessage(MAIN_COLOR + "Added you to ranked " + SEC_COLOR + queue.getLadder().getDisplayName() + MAIN_COLOR + " queue!");
+                player.sendMessage("§7ELO: §f" + queuePlayer.getRating() + " §7| Search Range: §f±" + queuePlayer.getRange() + " §7(expands over time)");
+            } else {
+                player.sendMessage(MAIN_COLOR + "Added you to unranked " + SEC_COLOR + queue.getLadder().getDisplayName() + MAIN_COLOR + " queue!");
+            }
+            
             player.getOpenInventory().close();
             player.getInventory().setContents(GameUtil.getQueueContents());
         }

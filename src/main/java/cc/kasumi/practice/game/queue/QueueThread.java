@@ -36,6 +36,11 @@ public class QueueThread extends Thread {
                             handleSoloQueue(queue);
                         }
                         // Add support for other queue types here if needed
+                        
+                        // Send periodic updates for ranked queues
+                        if (queue.isRanked()) {
+                            sendRankedQueueUpdates(queue);
+                        }
                     } catch (Exception queueException) {
                         System.err.println("Error processing queue " + queue.getName() + ": " + queueException.getMessage());
                         queueException.printStackTrace();
@@ -179,5 +184,51 @@ public class QueueThread extends Thread {
                 }
             }
         }.runTask(plugin);
+    }
+    
+    /**
+     * Send periodic updates to players in ranked queues about their search range
+     */
+    private void sendRankedQueueUpdates(Queue queue) {
+        for (QueuePlayer queuePlayer : queue.getPlayers()) {
+            Player player = queuePlayer.getPlayer();
+            if (player != null) {
+                long queueTime = queuePlayer.getQueueTimeSeconds();
+                
+                // Send update every 30 seconds when range expands
+                if (queueTime > 0 && queueTime % 30 == 0) {
+                    new BukkitRunnable() {
+                        @Override
+                        public void run() {
+                            if (player.isOnline()) {
+                                int currentRange = queuePlayer.getRange();
+                                player.sendMessage("§7Search range expanded to §f±" + currentRange + " ELO §7after " + queuePlayer.getFormattedQueueTime() + " in queue");
+                                
+                                // Show potential matches in range
+                                int potentialMatches = countPotentialMatches(queue, queuePlayer);
+                                if (potentialMatches > 0) {
+                                    player.sendMessage("§7Found §f" + potentialMatches + " §7potential opponent(s) in range");
+                                }
+                            }
+                        }
+                    }.runTask(plugin);
+                }
+            }
+        }
+    }
+    
+    /**
+     * Count how many potential opponents are in range for a player
+     */
+    private int countPotentialMatches(Queue queue, QueuePlayer targetPlayer) {
+        int count = 0;
+        for (QueuePlayer otherPlayer : queue.getPlayers()) {
+            if (!otherPlayer.equals(targetPlayer) && 
+                otherPlayer.getPlayer() != null && 
+                targetPlayer.isInRange(otherPlayer.getRating())) {
+                count++;
+            }
+        }
+        return count;
     }
 }
