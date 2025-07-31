@@ -12,12 +12,14 @@ import cc.kasumi.practice.game.match.team.MatchTeam;
 import cc.kasumi.practice.player.PlayerState;
 import cc.kasumi.practice.player.PracticePlayer;
 import cc.kasumi.practice.util.GameUtil;
+import cc.kasumi.practice.util.SpectatorUtil;
 import cc.kasumi.practice.vanish.VanishUtil;
 import com.comphenix.protocol.wrappers.Pair;
 import lombok.Getter;
 import lombok.Setter;
 import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.ChatColor;
+import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.PlayerInventory;
@@ -182,13 +184,46 @@ public abstract class Match {
 
     // Common spectator methods
     protected void startSpectating(Player player) {
+        PracticePlayer practicePlayer = PracticePlayer.getPracticePlayer(player.getUniqueId());
+        
+        // Set player state to spectating
+        practicePlayer.setPlayerState(PlayerState.SPECTATING);
+        
+        // Add to match spectators
+        spectators.add(player.getUniqueId());
+        
+        // Set spectator gamemode to prevent hitting players
+        player.setGameMode(GameMode.SPECTATOR);
+        
+        // Enable flying
         player.setAllowFlight(true);
         player.setFlying(true);
+        
+        // Give spectator items
+        SpectatorUtil.giveSpectatorItems(player);
+        
+        // Set up vanish for spectator
+        VanishUtil.setupSpectatorVanish(player, this);
     }
 
     protected void stopSpectating(Player player) {
+        PracticePlayer practicePlayer = PracticePlayer.getPracticePlayer(player.getUniqueId());
+        
+        // Reset player state
+        practicePlayer.setPlayerState(PlayerState.LOBBY);
+        
+        // Remove from match spectators
+        spectators.remove(player.getUniqueId());
+        
+        // Reset gamemode back to survival
+        player.setGameMode(GameMode.SURVIVAL);
+        
+        // Disable flying
         player.setAllowFlight(false);
         player.setFlying(false);
+        
+        // Remove spectator items and give lobby items
+        SpectatorUtil.removeSpectatorItems(player);
     }
 
     // Common messaging
@@ -313,6 +348,24 @@ public abstract class Match {
     }
 
     protected void finishMatch() {
+        // Handle any remaining external spectators
+        for (UUID spectatorUUID : new HashSet<>(spectators)) {
+            Player spectator = org.bukkit.Bukkit.getPlayer(spectatorUUID);
+            if (spectator != null && spectator.isOnline()) {
+                PracticePlayer practicePlayer = PracticePlayer.getPracticePlayer(spectatorUUID);
+                if (practicePlayer != null && practicePlayer.getPlayerState() == PlayerState.SPECTATING) {
+                    // Reset spectator
+                    stopSpectating(spectator);
+                    spectator.teleport(spectator.getWorld().getSpawnLocation());
+                    spectator.getInventory().setContents(GameUtil.getLobbyContents());
+                    VanishUtil.showAllPlayers(spectator);
+                    practicePlayer.setPlayerState(PlayerState.LOBBY);
+                    practicePlayer.setSpectatingMatch(null);
+                    spectator.sendMessage("§cThe match you were spectating has ended.");
+                }
+            }
+        }
+        
         matchManager.getMatches().remove(this);
     }
 
