@@ -294,7 +294,6 @@ public abstract class Match {
                     winnersBuilder.append(", ");
                 }
             }
-            winnersBuilder.append("!");
         }
 
         // Add clickable inventories
