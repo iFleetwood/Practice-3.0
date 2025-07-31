@@ -1,4 +1,4 @@
-package cc.kasumi.practice.spectator;
+package cc.kasumi.practice.menu;
 
 import cc.kasumi.commons.menu.Button;
 import cc.kasumi.commons.menu.Menu;

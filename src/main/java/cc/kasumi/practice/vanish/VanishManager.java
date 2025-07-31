@@ -94,6 +94,7 @@ public class VanishManager {
         if (sourceUUID.equals(viewerUUID)) {
             return true; // Always see your own stuff
         }
+
         return canSee(viewerUUID, sourceUUID);
     }
 }

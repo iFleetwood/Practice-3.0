@@ -1,9 +1,9 @@
 package cc.kasumi.practice.listener;
 
 import cc.kasumi.practice.Practice;
+import cc.kasumi.practice.menu.SpectatorTeleportMenu;
 import cc.kasumi.practice.player.PlayerState;
 import cc.kasumi.practice.player.PracticePlayer;
-import cc.kasumi.practice.spectator.SpectatorTeleportMenu;
 import cc.kasumi.practice.vanish.VanishUtil;
 import org.bukkit.Material;
 import org.bukkit.entity.Entity;

@@ -2,6 +2,7 @@ package cc.kasumi.practice.vanish;
 
 import cc.kasumi.practice.Practice;
 import cc.kasumi.practice.game.match.Match;
+import cc.kasumi.practice.nametag.NametagManager;
 import cc.kasumi.practice.player.PracticePlayer;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -15,6 +16,11 @@ public class VanishUtil {
 
     private static VanishManager getVanishManager() {
         return Practice.getInstance().getVanishManager();
+    }
+
+    private static void updateNametags(Player player) {
+        NametagManager nametagManager = Practice.getInstance().getNametagManager();
+        nametagManager.updateNametagsFor(player);
     }
 
     /**
@@ -31,6 +37,9 @@ public class VanishUtil {
             vanishManager.addCanSee(player.getUniqueId(), onlinePlayer.getUniqueId());
             vanishManager.addCanSee(onlinePlayer.getUniqueId(), player.getUniqueId());
         }
+
+        // Update nametags after visibility changes
+        updateNametags(player);
     }
 
     /**
@@ -49,7 +58,11 @@ public class VanishUtil {
             vanishManager.removeCanSee(player.getUniqueId(), onlinePlayer.getUniqueId());
             vanishManager.removeCanSee(onlinePlayer.getUniqueId(), player.getUniqueId());
         }
+
+        // Update nametags after visibility changes
+        updateNametags(player);
     }
+
 
     /**
      * Show only match players to each other
@@ -72,6 +85,9 @@ public class VanishUtil {
                     player.showPlayer(otherPlayer);
                 }
             }
+
+            // Update nametags for this player
+            updateNametags(player);
         }
     }
 
@@ -136,6 +152,7 @@ public class VanishUtil {
 
         switch (practicePlayer.getPlayerState()) {
             case LOBBY:
+            case QUEUEING:  // Players in queue should still see each other
                 showAllPlayers(player);
                 break;
 
@@ -151,11 +168,13 @@ public class VanishUtil {
                 }
                 break;
 
-            case QUEUEING:
             case EDITING:
                 hideAllPlayers(player);
                 break;
         }
+
+        // Always update nametags when player state changes
+        updateNametags(player);
     }
 
     /**

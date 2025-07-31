@@ -18,6 +18,8 @@ import cc.kasumi.practice.game.queue.Queue;
 import cc.kasumi.practice.game.queue.type.FFAQueue;
 import cc.kasumi.practice.game.queue.type.SoloQueue;
 import cc.kasumi.practice.listener.*;
+import cc.kasumi.practice.nametag.NametagManager;
+import cc.kasumi.practice.nametag.PlayerNametag;
 import cc.kasumi.practice.player.PracticePlayer;
 import cc.kasumi.practice.scoreboard.ScoreboardManager;
 import cc.kasumi.practice.vanish.VanishListener;
@@ -48,6 +50,7 @@ public final class Practice extends JavaPlugin {
     private MDatabase mDatabase;
     private boolean connectionEstablished = false;
 
+    private NametagManager nametagManager;
     private CacheManager cacheManager;
     private MatchManager matchManager;
     private DuelManager duelManager;
@@ -73,10 +76,14 @@ public final class Practice extends JavaPlugin {
 
     @Override
     public void onDisable() {
-
         savePlayerData();
         savePracticeData();
         saveConfigs();
+
+        // Cleanup nametags
+        if (nametagManager != null) {
+            nametagManager.getNametags().values().forEach(PlayerNametag::delete);
+        }
     }
 
     private void loadConfigs() {
@@ -125,7 +132,7 @@ public final class Practice extends JavaPlugin {
         }
     }
 
-    private void registerManagers()  {
+    private void registerManagers() {
         this.cacheManager = new CacheManager();
         this.matchManager = new MatchManager();
         this.duelManager = new DuelManager(this);
@@ -133,6 +140,7 @@ public final class Practice extends JavaPlugin {
         this.arenaManager = new ArenaManager();
         this.vanishManager = new VanishManager();
         this.scoreboardManager = new ScoreboardManager(this);
+        this.nametagManager = new NametagManager(this);  // Add this line
         this.paperCommandManager = new PaperCommandManager(this);
     }
 
@@ -158,8 +166,9 @@ public final class Practice extends JavaPlugin {
         paperCommandManager.registerCommand(new ViewInvCommand(cacheManager));
         paperCommandManager.registerCommand(new FFACommand(matchManager));
         paperCommandManager.registerCommand(new QueueDebugCommand());
-        paperCommandManager.registerCommand(new SpectatorCommand()); // Add spectator support
+        paperCommandManager.registerCommand(new SpectatorCommand());
         paperCommandManager.registerCommand(new VanishTestCommand());
+        paperCommandManager.registerCommand(new NametagTestCommand()); // Add this line
     }
 
     private void savePracticeData() {
