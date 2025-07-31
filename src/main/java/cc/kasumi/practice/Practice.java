@@ -34,6 +34,8 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 @Getter
 public final class Practice extends JavaPlugin {
@@ -64,6 +66,9 @@ public final class Practice extends JavaPlugin {
     @Override
     public void onEnable() {
         instance = this;
+
+        // Suppress MongoDB driver verbose logging
+        suppressMongoDBLogging();
 
         registerManagers();
         loadConfigs();
@@ -204,5 +209,20 @@ public final class Practice extends JavaPlugin {
 
     public MCollection getPlayersCollection() {
         return new MCollection(mDatabase, "practice-players");
+    }
+
+    private void suppressMongoDBLogging() {
+        // Suppress MongoDB driver INFO logs
+        Logger mongoLogger = Logger.getLogger("org.mongodb.driver");
+        mongoLogger.setLevel(Level.WARNING);
+        
+        Logger connectionLogger = Logger.getLogger("org.mongodb.driver.connection");
+        connectionLogger.setLevel(Level.WARNING);
+        
+        Logger clusterLogger = Logger.getLogger("org.mongodb.driver.cluster");
+        clusterLogger.setLevel(Level.WARNING);
+        
+        Logger protocolLogger = Logger.getLogger("org.mongodb.driver.protocol");
+        protocolLogger.setLevel(Level.WARNING);
     }
 }
