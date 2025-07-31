@@ -345,15 +345,17 @@ public abstract class Match {
      * Calculate the average rating of all opponents for this player
      */
     private int calculateOpponentAverageRating(Player player) {
-        List<MatchPlayer> allPlayers = getAllMatchPlayers();
         List<Integer> opponentRatings = new ArrayList<>();
         
-        for (MatchPlayer matchPlayer : allPlayers) {
-            Player otherPlayer = matchPlayer.getPlayer();
-            if (otherPlayer != null && !otherPlayer.equals(player)) {
-                PracticePlayer otherPracticePlayer = PracticePlayer.getPracticePlayer(otherPlayer.getUniqueId());
-                if (otherPracticePlayer != null) {
-                    opponentRatings.add(otherPracticePlayer.getLadderElo(ladder).getRating());
+        // Get all players from all teams
+        for (MatchTeam team : getTeams()) {
+            for (MatchPlayer matchPlayer : team.getPlayers()) {
+                Player otherPlayer = matchPlayer.getPlayer();
+                if (otherPlayer != null && !otherPlayer.equals(player)) {
+                    PracticePlayer otherPracticePlayer = PracticePlayer.getPracticePlayer(otherPlayer.getUniqueId());
+                    if (otherPracticePlayer != null) {
+                        opponentRatings.add(otherPracticePlayer.getLadderElo(ladder).getRating());
+                    }
                 }
             }
         }
@@ -363,13 +365,5 @@ public abstract class Match {
         }
         
         return opponentRatings.stream().mapToInt(Integer::intValue).sum() / opponentRatings.size();
-    }
-
-    protected List<MatchPlayer> getAllMatchPlayers() {
-        List<MatchPlayer> allPlayers = new ArrayList<>();
-        for (MatchTeam team : getTeams()) {
-            allPlayers.addAll(team.getPlayers());
-        }
-        return allPlayers;
     }
 }
