@@ -87,6 +87,13 @@ public abstract class Match {
         MatchPlayer matchPlayer = pair.getSecond();
 
         matchPlayer.setDead(true);
+        
+        // Record death in statistics
+        PracticePlayer practicePlayer = PracticePlayer.getPracticePlayer(player.getUniqueId());
+        if (practicePlayer != null) {
+            practicePlayer.recordDeath();
+        }
+        
         cacheManager.cachePlayerInventory(player, ladder.getInventoryType(), true);
         PlayerUtil.resetPlayer(player);
 
@@ -280,6 +287,15 @@ public abstract class Match {
         // Update ELO rating for ranked matches
         if (ranked && practicePlayer != null) {
             updatePlayerRating(practicePlayer, player, winner);
+        }
+        
+        // Record match result in statistics
+        if (practicePlayer != null) {
+            if (winner) {
+                practicePlayer.recordWin(ladder);
+            } else {
+                practicePlayer.recordLoss(ladder);
+            }
         }
 
         PlayerUtil.resetPlayer(player);

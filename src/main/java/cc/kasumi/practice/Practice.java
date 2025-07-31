@@ -169,6 +169,8 @@ public final class Practice extends JavaPlugin {
         paperCommandManager.registerCommand(new SpectatorCommand());
         paperCommandManager.registerCommand(new VanishTestCommand());
         paperCommandManager.registerCommand(new NametagTestCommand()); // Add this line
+        paperCommandManager.registerCommand(new cc.kasumi.practice.command.StatsCommand());
+        paperCommandManager.registerCommand(new cc.kasumi.practice.command.LeaderboardCommand());
     }
 
     private void savePracticeData() {
