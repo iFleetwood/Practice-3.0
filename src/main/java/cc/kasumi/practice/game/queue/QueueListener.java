@@ -41,9 +41,6 @@ public class QueueListener implements Listener {
         }
 
         else if (clicked.equals(PlayerItem.RANKED_QUEUE.getItem())) {
-            // Open ranked queue menu
-            if (true) return; // Temporarily disabled
-
             new SelectQueueMenu(true).openMenu(player);
         }
 
