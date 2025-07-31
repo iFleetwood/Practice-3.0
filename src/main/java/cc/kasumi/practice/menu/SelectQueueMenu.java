@@ -89,7 +89,16 @@ public class SelectQueueMenu extends Menu {
 
             player.closeInventory();
 
-            queue.getPlayers().add(new QueuePlayer(player.getUniqueId()));
+            // For ranked queues, use the player's ladder-specific rating
+            QueuePlayer queuePlayer;
+            if (queue.isRanked()) {
+                int ladderRating = practicePlayer.getLadderElo(queue.getLadder()).getRating();
+                queuePlayer = new QueuePlayer(player.getUniqueId(), ladderRating);
+            } else {
+                queuePlayer = new QueuePlayer(player.getUniqueId());
+            }
+            
+            queue.getPlayers().add(queuePlayer);
             practicePlayer.setPlayerState(PlayerState.QUEUEING);
             practicePlayer.setCurrentQueue(queue);
             player.sendMessage(MAIN_COLOR + "Added you to " + (queue.isRanked() ? "ranked " : "unranked ") + SEC_COLOR + queue.getLadder().getDisplayName() + MAIN_COLOR + " queue!");

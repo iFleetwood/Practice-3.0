@@ -44,6 +44,62 @@ public class PracticePlayer {
         this.playerState = PlayerState.LOBBY;
         this.elo = new PlayerElo(1000);
         this.builder = false;
+        
+        // Initialize default ratings for all ladders
+        initializeLadderRatings();
+    }
+    
+    private void initializeLadderRatings() {
+        // Initialize ratings for all existing ladders
+        for (Ladder ladder : Practice.getInstance().getLadders().values()) {
+            if (!ladderRatings.containsKey(ladder)) {
+                ladderRatings.put(ladder, new PlayerElo(1000));
+            }
+        }
+    }
+    
+    /**
+     * Get ELO rating for a specific ladder
+     */
+    public PlayerElo getLadderElo(Ladder ladder) {
+        return ladderRatings.computeIfAbsent(ladder, k -> new PlayerElo(1000));
+    }
+    
+    /**
+     * Set ELO rating for a specific ladder
+     */
+    public void setLadderElo(Ladder ladder, PlayerElo elo) {
+        ladderRatings.put(ladder, elo);
+    }
+    
+    /**
+     * Get overall ELO (average of all ladder ratings)
+     */
+    public PlayerElo getElo() {
+        if (ladderRatings.isEmpty()) {
+            return elo; // Fallback to global elo
+        }
+        
+        int totalRating = ladderRatings.values().stream()
+                .mapToInt(PlayerElo::getRating)
+                .sum();
+        int averageRating = totalRating / ladderRatings.size();
+        
+        return new PlayerElo(averageRating);
+    }
+    
+    /**
+     * Get ladder-specific ELO rating as integer for convenience
+     */
+    public int getLadderRating(Ladder ladder) {
+        return getLadderElo(ladder).getRating();
+    }
+    
+    /**
+     * Get all ladder ratings for display
+     */
+    public Map<Ladder, PlayerElo> getLadderRatings() {
+        return new HashMap<>(ladderRatings);
     }
 
     public CompletableFuture<PracticePlayer> load() {
@@ -61,7 +117,25 @@ public class PracticePlayer {
 
     private void loadResult(Document result) {
         if (result != null) {
-            elo = new PlayerElo(result.getInteger("elo"));
+            // Load global elo for backward compatibility
+            if (result.containsKey("elo")) {
+                elo = new PlayerElo(result.getInteger("elo"));
+            }
+            
+            // Load per-ladder ratings
+            if (result.containsKey("ladderRatings")) {
+                Document ladderRatingsDoc = result.get("ladderRatings", Document.class);
+                for (String ladderName : ladderRatingsDoc.keySet()) {
+                    Ladder ladder = Practice.getInstance().getLadders().get(ladderName);
+                    if (ladder != null) {
+                        int rating = ladderRatingsDoc.getInteger(ladderName, 1000);
+                        ladderRatings.put(ladder, new PlayerElo(rating));
+                    }
+                }
+            }
+            
+            // Initialize any missing ladder ratings
+            initializeLadderRatings();
         } else {
             save(true);
         }
@@ -78,8 +152,17 @@ public class PracticePlayer {
     }
 
     public Document getPlayerDocument() {
-        return getKey()
+        Document doc = getKey()
                 .append("elo", elo.getRating());
+        
+        // Save per-ladder ratings
+        Document ladderRatingsDoc = new Document();
+        for (Map.Entry<Ladder, PlayerElo> entry : ladderRatings.entrySet()) {
+            ladderRatingsDoc.append(entry.getKey().getName(), entry.getValue().getRating());
+        }
+        doc.append("ladderRatings", ladderRatingsDoc);
+        
+        return doc;
     }
 
     public Document getKey() {

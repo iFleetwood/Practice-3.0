@@ -28,6 +28,7 @@ import java.util.stream.Collectors;
 
 import static cc.kasumi.practice.PracticeConfiguration.MAIN_COLOR;
 import static cc.kasumi.practice.PracticeConfiguration.SEC_COLOR;
+import cc.kasumi.practice.player.PlayerElo;
 
 @Getter
 public abstract class Match {
@@ -241,6 +242,11 @@ public abstract class Match {
         String message = getEndMessage(player, winner);
         player.sendMessage(message);
 
+        // Update ELO rating for ranked matches
+        if (ranked && practicePlayer != null) {
+            updatePlayerRating(practicePlayer, player, winner);
+        }
+
         PlayerUtil.resetPlayer(player);
         player.teleport(player.getWorld().getSpawnLocation());
         stopSpectating(player);
@@ -308,5 +314,62 @@ public abstract class Match {
 
     protected void finishMatch() {
         matchManager.getMatches().remove(this);
+    }
+
+    /**
+     * Update player's ELO rating for the ladder after a ranked match
+     */
+    private void updatePlayerRating(PracticePlayer practicePlayer, Player player, boolean winner) {
+        PlayerElo currentElo = practicePlayer.getLadderElo(ladder);
+        
+        // Calculate opponent's average rating
+        int opponentRating = calculateOpponentAverageRating(player);
+        
+        // Calculate new rating based on match result
+        double score = winner ? 1.0 : 0.0; // 1.0 for win, 0.0 for loss
+        int newRating = currentElo.getNewRating(opponentRating, score);
+        
+        // Update the rating
+        practicePlayer.setLadderElo(ladder, new PlayerElo(newRating));
+        
+        // Save the updated rating
+        practicePlayer.save(true);
+        
+        // Notify player of rating change
+        int ratingChange = newRating - currentElo.getRating();
+        String changeColor = ratingChange >= 0 ? "§a+" : "§c";
+        player.sendMessage("§7ELO Rating: §f" + currentElo.getRating() + " §7→ §f" + newRating + " §7(" + changeColor + ratingChange + "§7)");
+    }
+    
+    /**
+     * Calculate the average rating of all opponents for this player
+     */
+    private int calculateOpponentAverageRating(Player player) {
+        List<MatchPlayer> allPlayers = getAllMatchPlayers();
+        List<Integer> opponentRatings = new ArrayList<>();
+        
+        for (MatchPlayer matchPlayer : allPlayers) {
+            Player otherPlayer = matchPlayer.getPlayer();
+            if (otherPlayer != null && !otherPlayer.equals(player)) {
+                PracticePlayer otherPracticePlayer = PracticePlayer.getPracticePlayer(otherPlayer.getUniqueId());
+                if (otherPracticePlayer != null) {
+                    opponentRatings.add(otherPracticePlayer.getLadderElo(ladder).getRating());
+                }
+            }
+        }
+        
+        if (opponentRatings.isEmpty()) {
+            return 1000; // Default rating if no opponents found
+        }
+        
+        return opponentRatings.stream().mapToInt(Integer::intValue).sum() / opponentRatings.size();
+    }
+
+    protected List<MatchPlayer> getAllMatchPlayers() {
+        List<MatchPlayer> allPlayers = new ArrayList<>();
+        for (MatchTeam team : getTeams()) {
+            allPlayers.addAll(team.getPlayers());
+        }
+        return allPlayers;
     }
 }
