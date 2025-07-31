@@ -285,7 +285,7 @@ public abstract class Match {
 
         // Build winners message
         if (winners.size() == 1) {
-            winnersBuilder.append("Winner: ").append(winners.get(0).getName()).append("!");
+            winnersBuilder.append("Winner: ").append(winners.get(0).getName());
         } else if (winners.size() > 1) {
             winnersBuilder.append("Winners: ");
             for (int i = 0; i < winners.size(); i++) {

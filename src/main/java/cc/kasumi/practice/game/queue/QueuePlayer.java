@@ -38,7 +38,7 @@ public class QueuePlayer {
         
         // Expand range every 30 seconds
         // 0-30s: ±25, 30-60s: ±50, 60-90s: ±75, etc.
-        int rangeIncrements = (int) (secondsInQueue / 30);
+        int rangeIncrements = (int) (secondsInQueue / 10);
         int expandedRange = baseRange + (rangeIncrements * 25);
         
         // Cap at maximum range

@@ -69,6 +69,7 @@ public class QueueListener implements Listener {
             practicePlayer.setCurrentQueue(null);
             practicePlayer.setPlayerState(PlayerState.LOBBY);
             player.getInventory().setContents(GameUtil.getLobbyContents());
+            player.updateInventory();
         }
     }
 

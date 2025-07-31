@@ -10,6 +10,7 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.FoodLevelChangeEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
+import org.bukkit.event.player.PlayerPickupItemEvent;
 
 import java.util.UUID;
 
@@ -70,6 +71,29 @@ public class LobbyListener implements Listener {
     @EventHandler
     public void onPlayerDropItem(PlayerDropItemEvent event) {
         Player player = event.getPlayer();
+
+        if (player.isOp()) {
+            return;
+        }
+
+        UUID uuid = player.getUniqueId();
+        PracticePlayer practicePlayer = PracticePlayer.getPracticePlayer(uuid);
+
+        if (practicePlayer.isInMatch()) {
+            return;
+        }
+
+        event.setCancelled(true);
+    }
+
+    @EventHandler
+    public void onPlayerPickupItem(PlayerPickupItemEvent event) {
+        Player player = event.getPlayer();
+
+        if (player.isOp()) {
+            return;
+        }
+
         UUID uuid = player.getUniqueId();
         PracticePlayer practicePlayer = PracticePlayer.getPracticePlayer(uuid);
 
