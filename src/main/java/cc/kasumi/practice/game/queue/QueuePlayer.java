@@ -15,6 +15,7 @@ public class QueuePlayer {
     private int rating;
     private int baseRange = 25; // Starting range
     private int maxRange = 200; // Maximum range after long queue times
+    private int lastNotifiedRange = 25; // Track last range we notified about
 
     public QueuePlayer(UUID uuid) {
         this.uuid = uuid;
@@ -42,6 +43,25 @@ public class QueuePlayer {
         
         // Cap at maximum range
         return Math.min(expandedRange, maxRange);
+    }
+
+    /**
+     * Check if the range has expanded since last notification
+     */
+    public boolean hasRangeExpanded() {
+        int currentRange = getCurrentRange();
+        if (currentRange > lastNotifiedRange) {
+            lastNotifiedRange = currentRange;
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Reset the notification tracking (used when player joins queue)
+     */
+    public void resetNotificationTracking() {
+        lastNotifiedRange = getCurrentRange();
     }
 
     /**

@@ -103,6 +103,9 @@ public class SelectQueueMenu extends Menu {
             practicePlayer.setCurrentQueue(queue);
             
             if (queue.isRanked()) {
+                // Reset notification tracking to prevent immediate spam
+                queuePlayer.resetNotificationTracking();
+                
                 player.sendMessage(MAIN_COLOR + "Added you to ranked " + SEC_COLOR + queue.getLadder().getDisplayName() + MAIN_COLOR + " queue!");
                 player.sendMessage("§7ELO: §f" + queuePlayer.getRating() + " §7| Search Range: §f±" + queuePlayer.getRange() + " §7(expands over time)");
             } else {

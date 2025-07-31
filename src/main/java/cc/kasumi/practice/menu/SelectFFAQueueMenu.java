@@ -101,13 +101,28 @@ public class SelectFFAQueueMenu extends Menu {
 
             player.closeInventory();
 
-            queue.addPlayer(new QueuePlayer(player.getUniqueId()));
+            QueuePlayer queuePlayer;
+            if (queue.isRanked()) {
+                int ladderRating = practicePlayer.getLadderElo(queue.getLadder()).getRating();
+                queuePlayer = new QueuePlayer(player.getUniqueId(), ladderRating);
+                // Reset notification tracking to prevent immediate spam
+                queuePlayer.resetNotificationTracking();
+            } else {
+                queuePlayer = new QueuePlayer(player.getUniqueId());
+            }
+
+            queue.addPlayer(queuePlayer);
             practicePlayer.setPlayerState(PlayerState.QUEUEING);
             practicePlayer.setCurrentQueue(queue);
 
-            String queueType = queue.isRanked() ? "ranked " : "unranked ";
-            player.sendMessage(MAIN_COLOR + "Added you to " + queueType + SEC_COLOR + queue.getLadder().getDisplayName() +
-                    MAIN_COLOR + " FFA queue! " + SEC_COLOR + "(" + queue.getQueueStatus() + ")");
+            if (queue.isRanked()) {
+                player.sendMessage(MAIN_COLOR + "Added you to ranked " + SEC_COLOR + queue.getLadder().getDisplayName() +
+                        MAIN_COLOR + " FFA queue! " + SEC_COLOR + "(" + queue.getQueueStatus() + ")");
+                player.sendMessage("§7ELO: §f" + queuePlayer.getRating() + " §7| Search Range: §f±" + queuePlayer.getRange() + " §7(expands over time)");
+            } else {
+                player.sendMessage(MAIN_COLOR + "Added you to unranked " + SEC_COLOR + queue.getLadder().getDisplayName() +
+                        MAIN_COLOR + " FFA queue! " + SEC_COLOR + "(" + queue.getQueueStatus() + ")");
+            }
 
             player.getInventory().setContents(GameUtil.getQueueContents());
         }

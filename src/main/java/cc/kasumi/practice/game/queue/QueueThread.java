@@ -192,27 +192,22 @@ public class QueueThread extends Thread {
     private void sendRankedQueueUpdates(Queue queue) {
         for (QueuePlayer queuePlayer : queue.getPlayers()) {
             Player player = queuePlayer.getPlayer();
-            if (player != null) {
-                long queueTime = queuePlayer.getQueueTimeSeconds();
-                
-                // Send update every 30 seconds when range expands
-                if (queueTime > 0 && queueTime % 30 == 0) {
-                    new BukkitRunnable() {
-                        @Override
-                        public void run() {
-                            if (player.isOnline()) {
-                                int currentRange = queuePlayer.getRange();
-                                player.sendMessage("§7Search range expanded to §f±" + currentRange + " ELO §7after " + queuePlayer.getFormattedQueueTime() + " in queue");
-                                
-                                // Show potential matches in range
-                                int potentialMatches = countPotentialMatches(queue, queuePlayer);
-                                if (potentialMatches > 0) {
-                                    player.sendMessage("§7Found §f" + potentialMatches + " §7potential opponent(s) in range");
-                                }
+            if (player != null && queuePlayer.hasRangeExpanded()) {
+                new BukkitRunnable() {
+                    @Override
+                    public void run() {
+                        if (player.isOnline()) {
+                            int currentRange = queuePlayer.getRange();
+                            player.sendMessage("§7Search range expanded to §f±" + currentRange + " ELO §7after " + queuePlayer.getFormattedQueueTime() + " in queue");
+                            
+                            // Show potential matches in range
+                            int potentialMatches = countPotentialMatches(queue, queuePlayer);
+                            if (potentialMatches > 0) {
+                                player.sendMessage("§7Found §f" + potentialMatches + " §7potential opponent(s) in range");
                             }
                         }
-                    }.runTask(plugin);
-                }
+                    }
+                }.runTask(plugin);
             }
         }
     }
