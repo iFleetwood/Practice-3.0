@@ -11,6 +11,7 @@ import co.aikar.commands.annotation.Default;
 import co.aikar.commands.annotation.Subcommand;
 import co.aikar.commands.annotation.Syntax;
 import co.aikar.commands.bukkit.contexts.OnlinePlayer;
+import org.bukkit.GameMode;
 import org.bukkit.entity.Player;
 
 import static cc.kasumi.practice.PracticeConfiguration.*;
@@ -51,6 +52,9 @@ public class SpectatorCommand extends BaseCommand {
         // Add to match spectators
         targetMatch.getSpectators().add(player.getUniqueId());
 
+        // Set spectator gamemode to prevent hitting players
+        player.setGameMode(GameMode.SPECTATOR);
+
         // Set up vanish for spectator
         VanishUtil.setupSpectatorVanish(player, targetMatch);
 
@@ -85,6 +89,9 @@ public class SpectatorCommand extends BaseCommand {
         // Reset player state
         practicePlayer.setPlayerState(PlayerState.LOBBY);
         practicePlayer.setSpectatingMatch(null);
+
+        // Reset gamemode back to survival
+        player.setGameMode(GameMode.SURVIVAL);
 
         // Disable flying
         player.setAllowFlight(false);

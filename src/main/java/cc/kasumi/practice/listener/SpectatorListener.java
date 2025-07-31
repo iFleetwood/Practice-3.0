@@ -5,11 +5,13 @@ import cc.kasumi.practice.menu.SpectatorTeleportMenu;
 import cc.kasumi.practice.player.PlayerState;
 import cc.kasumi.practice.player.PracticePlayer;
 import cc.kasumi.practice.vanish.VanishUtil;
+import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
@@ -30,7 +32,7 @@ public class SpectatorListener implements Listener {
         this.players = plugin.getPlayers();
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.HIGH)
     public void onEntityDamageByEntity(EntityDamageByEntityEvent event) {
         if (!(event.getEntity() instanceof Player victim)) {
             return;
@@ -60,12 +62,20 @@ public class SpectatorListener implements Listener {
         // Cancel damage if damager is spectating
         if (damagerPracticePlayer != null && isSpectating(damagerPracticePlayer)) {
             event.setCancelled(true);
+            // Additional safety: ensure spectator is in spectator gamemode
+            if (damager.getGameMode() != GameMode.SPECTATOR) {
+                damager.setGameMode(GameMode.SPECTATOR);
+            }
             return;
         }
 
         // Cancel damage if victim is spectating
         if (victimPracticePlayer != null && isSpectating(victimPracticePlayer)) {
             event.setCancelled(true);
+            // Additional safety: ensure spectator is in spectator gamemode
+            if (victim.getGameMode() != GameMode.SPECTATOR) {
+                victim.setGameMode(GameMode.SPECTATOR);
+            }
             return;
         }
 
@@ -75,7 +85,7 @@ public class SpectatorListener implements Listener {
         }
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.HIGH)
     public void onEntityDamage(EntityDamageEvent event) {
         if (!(event.getEntity() instanceof Player player)) {
             return;

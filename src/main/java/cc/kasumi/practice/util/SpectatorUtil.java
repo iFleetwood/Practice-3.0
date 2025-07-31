@@ -19,7 +19,10 @@ public class SpectatorUtil {
      * Give spectator items to a player
      */
     public static void giveSpectatorItems(Player spectator) {
+        // Clear all inventory slots thoroughly
         spectator.getInventory().clear();
+        spectator.getInventory().setArmorContents(null);
+        spectator.getInventory().setExtraContents(null);
 
         ItemStack[] spectatorItems = {
                 new ItemBuilder(Material.COMPASS)
