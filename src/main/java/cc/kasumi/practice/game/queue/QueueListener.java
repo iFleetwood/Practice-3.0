@@ -2,6 +2,7 @@ package cc.kasumi.practice.game.queue;
 
 import cc.kasumi.practice.menu.SelectFFAQueueMenu;
 import cc.kasumi.practice.menu.SelectQueueMenu;
+import cc.kasumi.practice.menu.SelectTvTQueueMenu;
 import cc.kasumi.practice.player.PlayerState;
 import cc.kasumi.practice.player.PracticePlayer;
 import cc.kasumi.practice.util.GameUtil;
@@ -57,6 +58,14 @@ public class QueueListener implements Listener {
 
         else if (clicked.equals(PlayerItem.FFA_UNRANKED_QUEUE.getItem())) {
             new SelectFFAQueueMenu(false).openMenu(player);
+        }
+
+        else if (clicked.equals(PlayerItem.TVT_RANKED_QUEUE.getItem())) {
+            new SelectTvTQueueMenu(true).openMenu(player);
+        }
+
+        else if (clicked.equals(PlayerItem.TVT_UNRANKED_QUEUE.getItem())) {
+            new SelectTvTQueueMenu(false).openMenu(player);
         }
 
         else if (clicked.equals(PlayerItem.LEAVE_QUEUE.getItem())) {

@@ -3,7 +3,9 @@ package cc.kasumi.practice.game.match;
 import cc.kasumi.practice.game.arena.Arena;
 import cc.kasumi.practice.game.ladder.Ladder;
 import cc.kasumi.practice.game.match.player.MatchPlayer;
+import cc.kasumi.practice.game.match.team.MatchTeam;
 import cc.kasumi.practice.game.match.team.SoloTeam;
+import cc.kasumi.practice.game.match.team.TeamImpl;
 import cc.kasumi.practice.game.match.type.FFAMatch;
 import cc.kasumi.practice.game.match.type.TvTMatch;
 import lombok.Getter;
@@ -44,8 +46,30 @@ public class MatchManager {
     }
 
     public void createTeamMatch(@NonNull List<Player> teamA, @NonNull List<Player> teamB, Ladder ladder, Arena arena, boolean ranked) {
-        // This method would be implemented for team matches (2v2, 3v3, etc.)
-        // For now, just throw an exception since it's not implemented
-        throw new UnsupportedOperationException("Team matches are not yet implemented");
+        if (teamA.isEmpty() || teamB.isEmpty()) {
+            throw new IllegalArgumentException("Both teams must have at least one player");
+        }
+        
+        if (teamA.size() != teamB.size()) {
+            throw new IllegalArgumentException("Teams must have equal number of players");
+        }
+
+        // Convert players to MatchPlayers for team A
+        List<MatchPlayer> matchPlayersA = teamA.stream()
+                .map(player -> new MatchPlayer(player.getUniqueId(), player.getName()))
+                .collect(Collectors.toList());
+
+        // Convert players to MatchPlayers for team B  
+        List<MatchPlayer> matchPlayersB = teamB.stream()
+                .map(player -> new MatchPlayer(player.getUniqueId(), player.getName()))
+                .collect(Collectors.toList());
+
+        // Create team objects
+        MatchTeam matchTeamA = new TeamImpl(matchPlayersA);
+        MatchTeam matchTeamB = new TeamImpl(matchPlayersB);
+
+        // Create the team match
+        Match match = new TvTMatch(MatchType.TEAM, ladder, arena, ranked, matchTeamA, matchTeamB);
+        matches.add(match);
     }
 }

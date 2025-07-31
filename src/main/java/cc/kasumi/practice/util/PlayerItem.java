@@ -34,6 +34,16 @@ public enum PlayerItem {
             name(CC.BLUE + "Unranked FFA Queue").
             lore(CC.YELLOW + "Right click to join FFA queue")),
 
+    TVT_RANKED_QUEUE(new ItemBuilder(
+            Material.DIAMOND_PICKAXE).
+            name(CC.GREEN + "Ranked TvT Queue").
+            lore(CC.YELLOW + "Right click to join team queue")),
+
+    TVT_UNRANKED_QUEUE(new ItemBuilder(
+            Material.IRON_PICKAXE).
+            name(CC.BLUE + "Unranked TvT Queue").
+            lore(CC.YELLOW + "Right click to join team queue")),
+
     LEAVE_QUEUE(new ItemBuilder(
             Material.REDSTONE).
             name(CC.RED + "Leave Queue").

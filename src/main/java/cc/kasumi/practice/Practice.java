@@ -16,6 +16,7 @@ import cc.kasumi.practice.game.match.MatchManager;
 import cc.kasumi.practice.game.queue.*;
 import cc.kasumi.practice.game.queue.Queue;
 import cc.kasumi.practice.game.queue.type.FFAQueue;
+import cc.kasumi.practice.game.queue.type.PartyQueue;
 import cc.kasumi.practice.game.queue.type.SoloQueue;
 import cc.kasumi.practice.listener.*;
 import cc.kasumi.practice.nametag.NametagManager;
@@ -122,13 +123,13 @@ public final class Practice extends JavaPlugin {
             if (ladder.isRanked()) {
                 queues.put(ladderName + "_ranked", new SoloQueue(ladderName + "_ranked", ladder, true));
                 queues.put(ladderName + "_ffa_ranked", new FFAQueue(ladderName + "_ffa_ranked", ladder, true));
-                // Example: queues.put(ladderName + "_2v2_ranked", new PartyQueue(ladderName + "_2v2_ranked", ladder, true, 2));
+                queues.put(ladderName + "_2v2_ranked", new PartyQueue(ladderName + "_2v2_ranked", ladder, true, 2));
             }
 
             // Create unranked queues
             queues.put(ladderName + "_unranked", new SoloQueue(ladderName + "_unranked", ladder, false));
             queues.put(ladderName + "_ffa_unranked", new FFAQueue(ladderName + "_ffa_unranked", ladder, false));
-            // Example: queues.put(ladderName + "_2v2_unranked", new PartyQueue(ladderName + "_2v2_unranked", ladder, false, 2));
+            queues.put(ladderName + "_2v2_unranked", new PartyQueue(ladderName + "_2v2_unranked", ladder, false, 2));
         }
     }
 
