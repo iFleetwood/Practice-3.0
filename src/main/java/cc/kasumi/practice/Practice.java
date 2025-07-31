@@ -36,9 +36,29 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.logging.LogManager;
+import java.io.InputStream;
 
 @Getter
 public final class Practice extends JavaPlugin {
+
+    static {
+        // Set MongoDB logging properties as early as possible
+        System.setProperty("org.mongodb.driver.level", "SEVERE");
+        System.setProperty("com.mongodb.driver.level", "SEVERE");
+        System.setProperty("org.mongodb.level", "SEVERE");
+        System.setProperty("com.mongodb.level", "SEVERE");
+        
+        // Try to suppress MongoDB logging immediately
+        try {
+            Logger.getLogger("org.mongodb.driver").setLevel(Level.SEVERE);
+            Logger.getLogger("com.mongodb.driver").setLevel(Level.SEVERE);
+            Logger.getLogger("org.mongodb").setLevel(Level.SEVERE);
+            Logger.getLogger("com.mongodb").setLevel(Level.SEVERE);
+        } catch (Exception ignored) {
+            // Ignore any errors during static initialization
+        }
+    }
 
     @Getter
     private static Practice instance;
@@ -196,6 +216,9 @@ public final class Practice extends JavaPlugin {
 
     private void establishConnection() {
         try {
+            // Apply logging suppression right before connection
+            suppressMongoDBLoggingAgain();
+            
             mDatabase = new MDatabase(
                     "mongodb+srv://admin:puzYX5KVLZx4Lt99@cluster0.posexpe.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0",
                     "kasumi-server");
@@ -206,23 +229,69 @@ public final class Practice extends JavaPlugin {
             e.printStackTrace();
         }
     }
+    
+    private void suppressMongoDBLoggingAgain() {
+        // Apply logging suppression again right before connection
+        Logger.getLogger("org.mongodb.driver").setLevel(Level.SEVERE);
+        Logger.getLogger("org.mongodb.driver.connection").setLevel(Level.SEVERE);
+        Logger.getLogger("org.mongodb.driver.cluster").setLevel(Level.SEVERE);
+        Logger.getLogger("org.mongodb.driver.protocol").setLevel(Level.SEVERE);
+        Logger.getLogger("com.mongodb").setLevel(Level.SEVERE);
+        Logger.getLogger("com.mongodb.driver").setLevel(Level.SEVERE);
+        Logger.getLogger("com.mongodb.driver.connection").setLevel(Level.SEVERE);
+        Logger.getLogger("com.mongodb.driver.cluster").setLevel(Level.SEVERE);
+    }
 
     public MCollection getPlayersCollection() {
         return new MCollection(mDatabase, "practice-players");
     }
 
     private void suppressMongoDBLogging() {
-        // Suppress MongoDB driver INFO logs
-        Logger mongoLogger = Logger.getLogger("org.mongodb.driver");
-        mongoLogger.setLevel(Level.WARNING);
-        
-        Logger connectionLogger = Logger.getLogger("org.mongodb.driver.connection");
-        connectionLogger.setLevel(Level.WARNING);
-        
-        Logger clusterLogger = Logger.getLogger("org.mongodb.driver.cluster");
-        clusterLogger.setLevel(Level.WARNING);
-        
-        Logger protocolLogger = Logger.getLogger("org.mongodb.driver.protocol");
-        protocolLogger.setLevel(Level.WARNING);
+        try {
+            // Approach 1: Load custom logging configuration
+            try (InputStream configStream = getResource("logging.properties")) {
+                if (configStream != null) {
+                    LogManager.getLogManager().readConfiguration(configStream);
+                    System.out.println("[Practice] Loaded custom logging configuration");
+                }
+            } catch (Exception e) {
+                System.err.println("[Practice] Failed to load logging.properties: " + e.getMessage());
+            }
+            
+            // Approach 2: Set system properties for MongoDB logging
+            System.setProperty("org.mongodb.driver.level", "SEVERE");
+            System.setProperty("com.mongodb.driver.level", "SEVERE");
+            System.setProperty("java.util.logging.config.file", "logging.properties");
+            
+            // Approach 3: Programmatically set logger levels to SEVERE (only errors)
+            String[] loggerNames = {
+                "org.mongodb.driver",
+                "org.mongodb.driver.connection", 
+                "org.mongodb.driver.cluster",
+                "org.mongodb.driver.protocol",
+                "org.mongodb.driver.management",
+                "org.mongodb.driver.authenticator",
+                "org.mongodb",
+                "com.mongodb",
+                "com.mongodb.driver",
+                "com.mongodb.driver.connection",
+                "com.mongodb.driver.cluster", 
+                "com.mongodb.driver.protocol",
+                "com.mongodb.driver.management",
+                "com.mongodb.driver.authenticator"
+            };
+            
+            for (String loggerName : loggerNames) {
+                Logger logger = Logger.getLogger(loggerName);
+                logger.setLevel(Level.SEVERE);
+                logger.setUseParentHandlers(false);
+            }
+            
+            System.out.println("[Practice] MongoDB logging suppression applied");
+            
+        } catch (Exception e) {
+            System.err.println("[Practice] Failed to suppress MongoDB logging: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 }
