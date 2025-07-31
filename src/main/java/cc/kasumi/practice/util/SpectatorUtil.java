@@ -22,7 +22,6 @@ public class SpectatorUtil {
         // Clear all inventory slots thoroughly
         spectator.getInventory().clear();
         spectator.getInventory().setArmorContents(null);
-        spectator.getInventory().setExtraContents(null);
 
         ItemStack[] spectatorItems = {
                 new ItemBuilder(Material.COMPASS)
