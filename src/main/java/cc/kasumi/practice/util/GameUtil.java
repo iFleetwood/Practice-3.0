@@ -8,13 +8,13 @@ public class GameUtil {
         return new ItemStack[] {
                 PlayerItem.KIT_EDITOR.getItem(),
                 null,
-                null,
-                null,
-                null,
-                null,
                 PlayerItem.UNRANKED_QUEUE.getItem(),
+                PlayerItem.RANKED_QUEUE.getItem(),
+                null,
                 PlayerItem.FFA_UNRANKED_QUEUE.getItem(),
-                PlayerItem.RANKED_QUEUE.getItem()
+                PlayerItem.FFA_RANKED_QUEUE.getItem(),
+                PlayerItem.TVT_UNRANKED_QUEUE.getItem(),
+                PlayerItem.TVT_RANKED_QUEUE.getItem()
         };
     }
 

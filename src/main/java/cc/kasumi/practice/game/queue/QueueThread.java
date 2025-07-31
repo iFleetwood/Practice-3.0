@@ -3,6 +3,7 @@ package cc.kasumi.practice.game.queue;
 import cc.kasumi.practice.Practice;
 import cc.kasumi.practice.game.match.MatchManager;
 import cc.kasumi.practice.game.queue.type.FFAQueue;
+import cc.kasumi.practice.game.queue.type.PartyQueue;
 import cc.kasumi.practice.game.queue.type.SoloQueue;
 import cc.kasumi.practice.player.PracticePlayer;
 import org.bukkit.entity.Player;
@@ -34,6 +35,8 @@ public class QueueThread extends Thread {
                             handleFFAQueue(queue);
                         } else if (queue.getType() == QueueType.SOLO) {
                             handleSoloQueue(queue);
+                        } else if (queue.getType() == QueueType.PARTY) {
+                            handlePartyQueue(queue);
                         }
                         // Add support for other queue types here if needed
                     } catch (Exception queueException) {
@@ -175,6 +178,55 @@ public class QueueThread extends Thread {
                     // If match creation fails, notify players
                     for (Player player : bukkitPlayers) {
                         player.sendMessage("§cFailed to create FFA match. Please try again.");
+                    }
+                }
+            }
+        }.runTask(plugin);
+    }
+
+    private void handlePartyQueue(Queue queue) {
+        // Cast to PartyQueue for specific functionality
+        PartyQueue partyQueue = (PartyQueue) queue;
+
+        if (!partyQueue.isReadyForMatch()) {
+            return;
+        }
+
+        List<QueuePlayer> playersForMatch = partyQueue.getPlayersForMatch();
+        List<Player> bukkitPlayers = playersForMatch.stream()
+                .map(QueuePlayer::getPlayer)
+                .filter(player -> player != null)
+                .collect(Collectors.toList());
+
+        if (bukkitPlayers.size() < partyQueue.getMinPlayers()) {
+            return; // Not enough valid players
+        }
+
+        // Split players into two teams
+        int teamSize = partyQueue.getPartySize();
+        List<Player> teamA = bukkitPlayers.subList(0, teamSize);
+        List<Player> teamB = bukkitPlayers.subList(teamSize, Math.min(teamSize * 2, bukkitPlayers.size()));
+
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                // Clear queue assignments
+                for (Player player : bukkitPlayers) {
+                    PracticePlayer practicePlayer = PracticePlayer.getPracticePlayer(player.getUniqueId());
+                    if (practicePlayer != null) {
+                        practicePlayer.setCurrentQueue(null);
+                    }
+                }
+
+                try {
+                    // Create team match
+                    matchManager.createTeamMatch(teamA, teamB, partyQueue.getLadder(),
+                            plugin.getArenaManager().getAvailableArena(), partyQueue.isRanked());
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    // If match creation fails, notify players
+                    for (Player player : bukkitPlayers) {
+                        player.sendMessage("§cFailed to create team match. Please try again.");
                     }
                 }
             }
