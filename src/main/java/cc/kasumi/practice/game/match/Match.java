@@ -27,7 +27,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static cc.kasumi.practice.PracticeConfiguration.MAIN_COLOR;
-import static cc.kasumi.practice.PracticeConfiguration.SEC_COLOR;
 
 @Getter
 public abstract class Match {

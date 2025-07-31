@@ -1,6 +1,9 @@
-package cc.kasumi.practice.game.queue;
+package cc.kasumi.practice.game.queue.type;
 
 import cc.kasumi.practice.game.ladder.Ladder;
+import cc.kasumi.practice.game.queue.Queue;
+import cc.kasumi.practice.game.queue.QueuePlayer;
+import cc.kasumi.practice.game.queue.QueueType;
 
 import java.util.ArrayList;
 import java.util.List;
