@@ -147,6 +147,7 @@ public final class Practice extends JavaPlugin {
     private void registerListeners() {
         PluginManager pluginManager = Bukkit.getPluginManager();
 
+        pluginManager.registerEvents(new EnderpearlListener(), this);
         pluginManager.registerEvents(new LobbyListener(), this);
         pluginManager.registerEvents(new MatchListener(), this);
         pluginManager.registerEvents(new QueueListener(), this);
