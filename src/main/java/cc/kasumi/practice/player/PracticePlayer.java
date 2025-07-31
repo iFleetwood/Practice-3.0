@@ -210,8 +210,33 @@ public class PracticePlayer {
             // Load basic statistics
             totalKills = result.getInteger("totalKills", 0);
             totalDeaths = result.getInteger("totalDeaths", 0);
-            firstJoined = result.getLong("firstJoined", System.currentTimeMillis());
-            lastSeen = result.getLong("lastSeen", System.currentTimeMillis());
+            
+            // Handle timestamps safely
+            if (result.containsKey("firstJoined")) {
+                Object firstJoinedObj = result.get("firstJoined");
+                if (firstJoinedObj instanceof Long) {
+                    firstJoined = (Long) firstJoinedObj;
+                } else if (firstJoinedObj instanceof Integer) {
+                    firstJoined = ((Integer) firstJoinedObj).longValue();
+                } else {
+                    firstJoined = System.currentTimeMillis();
+                }
+            } else {
+                firstJoined = System.currentTimeMillis();
+            }
+            
+            if (result.containsKey("lastSeen")) {
+                Object lastSeenObj = result.get("lastSeen");
+                if (lastSeenObj instanceof Long) {
+                    lastSeen = (Long) lastSeenObj;
+                } else if (lastSeenObj instanceof Integer) {
+                    lastSeen = ((Integer) lastSeenObj).longValue();
+                } else {
+                    lastSeen = System.currentTimeMillis();
+                }
+            } else {
+                lastSeen = System.currentTimeMillis();
+            }
             
             // Load per-ladder ratings
             if (result.containsKey("ladderRatings")) {
