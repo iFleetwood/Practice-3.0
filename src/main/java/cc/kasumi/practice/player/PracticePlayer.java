@@ -462,7 +462,7 @@ public class PracticePlayer {
 
     public Document getPlayerDocument() {
         Document doc = getKey()
-                .append("name", Bukkit.getOfflinePlayer(uuid).getName())
+                .append("username", Bukkit.getOfflinePlayer(uuid).getName())
                 .append("elo", elo.getRating())
                 .append("totalKills", totalKills)
                 .append("totalDeaths", totalDeaths)
