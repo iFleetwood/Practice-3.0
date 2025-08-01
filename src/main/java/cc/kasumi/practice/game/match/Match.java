@@ -292,9 +292,9 @@ public abstract class Match {
         // Record match result in statistics
         if (practicePlayer != null) {
             if (winner) {
-                practicePlayer.recordWin(ladder);
+                practicePlayer.recordWin(ladder, ranked);
             } else {
-                practicePlayer.recordLoss(ladder);
+                practicePlayer.recordLoss(ladder, ranked);
             }
         }
 

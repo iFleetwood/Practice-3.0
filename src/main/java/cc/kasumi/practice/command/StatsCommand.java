@@ -55,20 +55,43 @@ public class StatsCommand extends BaseCommand {
         player.sendMessage(SEC_COLOR + "Ladder Statistics:");
         
         for (Ladder ladder : cc.kasumi.practice.Practice.getInstance().getLadders().values()) {
-            int wins = practicePlayer.getLadderWins().getOrDefault(ladder, 0);
-            int losses = practicePlayer.getLadderLosses().getOrDefault(ladder, 0);
+            int totalWins = practicePlayer.getLadderWins().getOrDefault(ladder, 0);
+            int totalLosses = practicePlayer.getLadderLosses().getOrDefault(ladder, 0);
             int totalMatches = practicePlayer.getTotalMatches(ladder);
             
             if (totalMatches > 0) {
                 int rating = practicePlayer.getLadderElo(ladder).getRating();
-                double winRate = practicePlayer.getWinRate(ladder);
+                double overallWinRate = practicePlayer.getWinRate(ladder);
                 int winStreak = practicePlayer.getLadderWinStreaks().getOrDefault(ladder, 0);
                 int bestStreak = practicePlayer.getLadderBestWinStreaks().getOrDefault(ladder, 0);
                 
+                // Ranked stats
+                int rankedWins = practicePlayer.getLadderRankedWins().getOrDefault(ladder, 0);
+                int rankedLosses = practicePlayer.getLadderRankedLosses().getOrDefault(ladder, 0);
+                int rankedMatches = practicePlayer.getTotalRankedMatches(ladder);
+                double rankedWinRate = practicePlayer.getRankedWinRate(ladder);
+                int rankedWinStreak = practicePlayer.getLadderRankedWinStreaks().getOrDefault(ladder, 0);
+                int bestRankedStreak = practicePlayer.getLadderBestRankedWinStreaks().getOrDefault(ladder, 0);
+                
+                // Unranked stats
+                int unrankedWins = practicePlayer.getLadderUnrankedWins().getOrDefault(ladder, 0);
+                int unrankedLosses = practicePlayer.getLadderUnrankedLosses().getOrDefault(ladder, 0);
+                int unrankedMatches = practicePlayer.getTotalUnrankedMatches(ladder);
+                double unrankedWinRate = practicePlayer.getUnrankedWinRate(ladder);
+                
                 player.sendMessage("  " + SEC_COLOR + ladder.getDisplayName() + ":");
                 player.sendMessage("    " + MAIN_COLOR + "ELO: " + SEC_COLOR + rating);
-                player.sendMessage("    " + MAIN_COLOR + "Record: " + SEC_COLOR + wins + "W/" + losses + "L (" + df.format(winRate) + "%)");
+                player.sendMessage("    " + MAIN_COLOR + "Overall: " + SEC_COLOR + totalWins + "W/" + totalLosses + "L (" + df.format(overallWinRate) + "%)");
                 player.sendMessage("    " + MAIN_COLOR + "Win Streak: " + SEC_COLOR + winStreak + " (Best: " + bestStreak + ")");
+                
+                if (rankedMatches > 0) {
+                    player.sendMessage("    " + MAIN_COLOR + "Ranked: " + SEC_COLOR + rankedWins + "W/" + rankedLosses + "L (" + df.format(rankedWinRate) + "%)");
+                    player.sendMessage("    " + MAIN_COLOR + "Ranked Streak: " + SEC_COLOR + rankedWinStreak + " (Best: " + bestRankedStreak + ")");
+                }
+                
+                if (unrankedMatches > 0) {
+                    player.sendMessage("    " + MAIN_COLOR + "Unranked: " + SEC_COLOR + unrankedWins + "W/" + unrankedLosses + "L (" + df.format(unrankedWinRate) + "%)");
+                }
             }
         }
         

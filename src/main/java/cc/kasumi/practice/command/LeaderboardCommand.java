@@ -69,8 +69,6 @@ public class LeaderboardCommand extends BaseCommand {
                     OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(uuid);
                     
                     int rating = 1000; // Default rating
-                    int wins = 0;
-                    int losses = 0;
                     
                     // Get ladder-specific rating
                     if (doc.containsKey("ladderRatings")) {
@@ -80,20 +78,35 @@ public class LeaderboardCommand extends BaseCommand {
                         }
                     }
                     
-                    // Get wins/losses
+                    // Get wins/losses (prioritize ranked for leaderboard)
+                    int rankedWins = 0;
+                    int rankedLosses = 0;
+                    int totalWins = 0;
+                    int totalLosses = 0;
+                    
+                    if (doc.containsKey("ladderRankedWins")) {
+                        Document ladderRankedWins = doc.get("ladderRankedWins", Document.class);
+                        rankedWins = ladderRankedWins.getInteger(ladder.getName(), 0);
+                    }
+                    
+                    if (doc.containsKey("ladderRankedLosses")) {
+                        Document ladderRankedLosses = doc.get("ladderRankedLosses", Document.class);
+                        rankedLosses = ladderRankedLosses.getInteger(ladder.getName(), 0);
+                    }
+                    
                     if (doc.containsKey("ladderWins")) {
                         Document ladderWins = doc.get("ladderWins", Document.class);
-                        wins = ladderWins.getInteger(ladder.getName(), 0);
+                        totalWins = ladderWins.getInteger(ladder.getName(), 0);
                     }
                     
                     if (doc.containsKey("ladderLosses")) {
                         Document ladderLosses = doc.get("ladderLosses", Document.class);
-                        losses = ladderLosses.getInteger(ladder.getName(), 0);
+                        totalLosses = ladderLosses.getInteger(ladder.getName(), 0);
                     }
                     
-                    // Only include players who have played matches
-                    if (wins + losses > 0) {
-                        entries.add(new LeaderboardEntry(offlinePlayer.getName(), rating, wins, losses));
+                    // Only include players who have played ranked matches (for competitive leaderboard)
+                    if (rankedWins + rankedLosses > 0) {
+                        entries.add(new LeaderboardEntry(offlinePlayer.getName(), rating, rankedWins, rankedLosses, totalWins, totalLosses));
                     }
                 }
                 
@@ -127,12 +140,14 @@ public class LeaderboardCommand extends BaseCommand {
             int rank = 1;
             for (LeaderboardEntry entry : entries.subList(0, Math.min(10, entries.size()))) {
                 String rankColor = getRankColor(rank);
-                double winRate = entry.getWinRate();
+                double rankedWinRate = entry.getRankedWinRate();
+                double totalWinRate = entry.getTotalWinRate();
                 
-                player.sendMessage(String.format("%s#%d %s%s %s- %s%d ELO %s(%dW/%dL - %.1f%%)",
-                    rankColor, rank, SEC_COLOR, entry.playerName, MAIN_COLOR,
-                    SEC_COLOR, entry.rating, MAIN_COLOR,
-                    entry.wins, entry.losses, winRate));
+                player.sendMessage(String.format("%s#%d %s%s %s- %s%d ELO",
+                    rankColor, rank, SEC_COLOR, entry.playerName, MAIN_COLOR, SEC_COLOR, entry.rating));
+                player.sendMessage(String.format("     %sRanked: %s%dW/%dL (%.1f%%) %s| Total: %s%dW/%dL (%.1f%%)",
+                    MAIN_COLOR, SEC_COLOR, entry.rankedWins, entry.rankedLosses, rankedWinRate,
+                    MAIN_COLOR, SEC_COLOR, entry.totalWins, entry.totalLosses, totalWinRate));
                 rank++;
             }
         }
@@ -153,20 +168,30 @@ public class LeaderboardCommand extends BaseCommand {
     private static class LeaderboardEntry {
         final String playerName;
         final int rating;
-        final int wins;
-        final int losses;
+        final int rankedWins;
+        final int rankedLosses;
+        final int totalWins;
+        final int totalLosses;
         
-        LeaderboardEntry(String playerName, int rating, int wins, int losses) {
+        LeaderboardEntry(String playerName, int rating, int rankedWins, int rankedLosses, int totalWins, int totalLosses) {
             this.playerName = playerName;
             this.rating = rating;
-            this.wins = wins;
-            this.losses = losses;
+            this.rankedWins = rankedWins;
+            this.rankedLosses = rankedLosses;
+            this.totalWins = totalWins;
+            this.totalLosses = totalLosses;
         }
         
-        double getWinRate() {
-            int total = wins + losses;
+        double getRankedWinRate() {
+            int total = rankedWins + rankedLosses;
             if (total == 0) return 0.0;
-            return (double) wins / total * 100.0;
+            return (double) rankedWins / total * 100.0;
+        }
+        
+        double getTotalWinRate() {
+            int total = totalWins + totalLosses;
+            if (total == 0) return 0.0;
+            return (double) totalWins / total * 100.0;
         }
     }
 }
