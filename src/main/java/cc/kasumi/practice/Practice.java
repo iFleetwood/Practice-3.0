@@ -150,6 +150,7 @@ public final class Practice extends JavaPlugin {
         pluginManager.registerEvents(new EnderpearlListener(), this);
         pluginManager.registerEvents(new LobbyListener(), this);
         pluginManager.registerEvents(new MatchListener(), this);
+        pluginManager.registerEvents(new cc.kasumi.practice.listener.MatchDamageListener(), this);
         pluginManager.registerEvents(new QueueListener(), this);
         pluginManager.registerEvents(new WeatherListener(), this);
         pluginManager.registerEvents(new PlayerListener(this), this);

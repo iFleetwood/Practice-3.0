@@ -79,10 +79,16 @@ public class VanishUtil {
 
             vanishManager.setCanSee(player.getUniqueId(), canSeeUUIDs);
 
-            // Actually show/hide players
-            for (Player otherPlayer : matchPlayers) {
-                if (otherPlayer != player) {
-                    player.showPlayer(otherPlayer);
+            // Hide all players first, then show only match players
+            for (Player onlinePlayer : org.bukkit.Bukkit.getOnlinePlayers()) {
+                if (onlinePlayer != player) {
+                    if (matchPlayers.contains(onlinePlayer)) {
+                        // Show match players
+                        player.showPlayer(onlinePlayer);
+                    } else {
+                        // Hide non-match players
+                        player.hidePlayer(onlinePlayer);
+                    }
                 }
             }
 
