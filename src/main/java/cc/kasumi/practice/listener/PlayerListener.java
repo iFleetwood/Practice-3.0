@@ -6,6 +6,7 @@ import cc.kasumi.practice.Practice;
 import cc.kasumi.practice.player.PracticePlayer;
 import cc.kasumi.practice.util.GameUtil;
 import cc.kasumi.practice.vanish.VanishUtil;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -23,6 +24,8 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 import static cc.kasumi.practice.PracticeConfiguration.*;
+import cc.kasumi.practice.nametag.NametagManager;
+import cc.kasumi.practice.nametag.PlayerNametag;
 
 public class PlayerListener implements Listener {
 
@@ -69,6 +72,18 @@ public class PlayerListener implements Listener {
 
         // Use enhanced vanish system for automatic visibility management
         VanishUtil.updatePlayerVanish(player);
+        
+        // Update nametags after a short delay to ensure PracticePlayer is available
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            NametagManager nametagManager = Practice.getInstance().getNametagManager();
+            nametagManager.updateNametagsFor(player);
+            
+            // Also update this player's nametag for others
+            PlayerNametag playerNametag = nametagManager.getNametags().get(player.getUniqueId());
+            if (playerNametag != null) {
+                nametagManager.updateNametag(playerNametag);
+            }
+        }, 10L); // 0.5 second delay
     }
 
     @EventHandler(priority = EventPriority.HIGH)

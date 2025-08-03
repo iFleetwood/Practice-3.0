@@ -578,14 +578,20 @@ public class PracticePlayer {
     }
 
     // Enhanced setters with vanish integration
-    public void setPlayerState(PlayerState newState) {
-        PlayerState oldState = this.playerState;
-        this.playerState = newState;
+    public void setPlayerState(PlayerState playerState) {
+        this.playerState = playerState;
 
         // Update vanish when player state changes
         Player player = getPlayer();
         if (player != null && player.isOnline()) {
             VanishUtil.updatePlayerVanish(player);
+            
+            // Update nametags when state changes
+            cc.kasumi.practice.nametag.NametagManager nametagManager = Practice.getInstance().getNametagManager();
+            cc.kasumi.practice.nametag.PlayerNametag playerNametag = nametagManager.getNametags().get(player.getUniqueId());
+            if (playerNametag != null) {
+                nametagManager.updateNametag(playerNametag);
+            }
         }
     }
 
@@ -596,6 +602,13 @@ public class PracticePlayer {
         Player player = getPlayer();
         if (player != null && player.isOnline()) {
             VanishUtil.updatePlayerVanish(player);
+            
+            // Update nametags when match changes
+            cc.kasumi.practice.nametag.NametagManager nametagManager = Practice.getInstance().getNametagManager();
+            cc.kasumi.practice.nametag.PlayerNametag playerNametag = nametagManager.getNametags().get(player.getUniqueId());
+            if (playerNametag != null) {
+                nametagManager.updateNametag(playerNametag);
+            }
         }
     }
 
@@ -606,6 +619,13 @@ public class PracticePlayer {
         Player player = getPlayer();
         if (player != null && player.isOnline()) {
             VanishUtil.updatePlayerVanish(player);
+            
+            // Update nametags when spectating changes
+            cc.kasumi.practice.nametag.NametagManager nametagManager = Practice.getInstance().getNametagManager();
+            cc.kasumi.practice.nametag.PlayerNametag playerNametag = nametagManager.getNametags().get(player.getUniqueId());
+            if (playerNametag != null) {
+                nametagManager.updateNametag(playerNametag);
+            }
         }
     }
 }
