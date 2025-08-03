@@ -52,8 +52,8 @@ public class SpectatorCommand extends BaseCommand {
         // Add to match spectators
         targetMatch.getSpectators().add(player.getUniqueId());
 
-        // Set spectator gamemode to prevent hitting players
-        player.setGameMode(GameMode.SPECTATOR);
+        // Set creative mode instead of spectator mode so they can interact with items
+        player.setGameMode(GameMode.CREATIVE);
 
         // Set up vanish for spectator
         VanishUtil.setupSpectatorVanish(player, targetMatch);
@@ -90,7 +90,7 @@ public class SpectatorCommand extends BaseCommand {
         practicePlayer.setPlayerState(PlayerState.LOBBY);
         practicePlayer.setSpectatingMatch(null);
 
-        // Reset gamemode back to survival
+        // Reset gamemode back to survival from creative
         player.setGameMode(GameMode.SURVIVAL);
 
         // Disable flying

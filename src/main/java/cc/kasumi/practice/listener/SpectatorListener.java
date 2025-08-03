@@ -62,20 +62,12 @@ public class SpectatorListener implements Listener {
         // Cancel damage if damager is spectating
         if (damagerPracticePlayer != null && isSpectating(damagerPracticePlayer)) {
             event.setCancelled(true);
-            // Additional safety: ensure spectator is in spectator gamemode
-            if (damager.getGameMode() != GameMode.SPECTATOR) {
-                damager.setGameMode(GameMode.SPECTATOR);
-            }
             return;
         }
 
         // Cancel damage if victim is spectating
         if (victimPracticePlayer != null && isSpectating(victimPracticePlayer)) {
             event.setCancelled(true);
-            // Additional safety: ensure spectator is in spectator gamemode
-            if (victim.getGameMode() != GameMode.SPECTATOR) {
-                victim.setGameMode(GameMode.SPECTATOR);
-            }
             return;
         }
 

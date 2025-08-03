@@ -199,8 +199,8 @@ public abstract class Match {
         // Add to match spectators
         spectators.add(player.getUniqueId());
         
-        // Set spectator gamemode to prevent hitting players
-        player.setGameMode(GameMode.SPECTATOR);
+        // Set creative mode instead of spectator mode so they can interact with items
+        player.setGameMode(GameMode.CREATIVE);
         
         // Enable flying
         player.setAllowFlight(true);
@@ -222,7 +222,7 @@ public abstract class Match {
         // Remove from match spectators
         spectators.remove(player.getUniqueId());
         
-        // Reset gamemode back to survival
+        // Reset gamemode back to survival from creative
         player.setGameMode(GameMode.SURVIVAL);
         
         // Disable flying
