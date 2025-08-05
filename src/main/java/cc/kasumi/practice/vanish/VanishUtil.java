@@ -7,7 +7,7 @@ import cc.kasumi.practice.player.PracticePlayer;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
-import java.util.List;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -29,16 +29,19 @@ public class VanishUtil {
     public static void showAllPlayers(Player player) {
         VanishManager vanishManager = getVanishManager();
 
+        Set<UUID> canSeeUUIDs = new HashSet<>();
         for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
-            player.showPlayer(onlinePlayer);
-            onlinePlayer.showPlayer(player);
+            if (onlinePlayer != player) {
+                player.showPlayer(onlinePlayer);
+                onlinePlayer.showPlayer(player);
+                canSeeUUIDs.add(onlinePlayer.getUniqueId());
 
-            // Update vanish manager
-            vanishManager.addCanSee(player.getUniqueId(), onlinePlayer.getUniqueId());
-            vanishManager.addCanSee(onlinePlayer.getUniqueId(), player.getUniqueId());
+                // Also update the other player's can-see list
+                vanishManager.addCanSee(onlinePlayer.getUniqueId(), player.getUniqueId());
+            }
         }
 
-        // Update nametags after visibility changes
+        vanishManager.setCanSee(player.getUniqueId(), canSeeUUIDs);
         updateNametags(player);
     }
 
@@ -54,46 +57,66 @@ public class VanishUtil {
             player.hidePlayer(onlinePlayer);
             onlinePlayer.hidePlayer(player);
 
-            // Update vanish manager
+            // Clear visibility completely
             vanishManager.removeCanSee(player.getUniqueId(), onlinePlayer.getUniqueId());
             vanishManager.removeCanSee(onlinePlayer.getUniqueId(), player.getUniqueId());
         }
 
-        // Update nametags after visibility changes
         updateNametags(player);
     }
 
-
     /**
-     * Show only match players to each other
+     * Show only match players to each other - FIXED VERSION
      */
     public static void showMatchPlayers(Match match) {
         VanishManager vanishManager = getVanishManager();
         Set<Player> matchPlayers = match.getBukkitPlayers();
+        Set<UUID> matchPlayerUUIDs = matchPlayers.stream()
+                .map(Player::getUniqueId)
+                .collect(Collectors.toSet());
 
         for (Player player : matchPlayers) {
-            Set<UUID> canSeeUUIDs = matchPlayers.stream()
-                    .filter(p -> p != player)
-                    .map(Player::getUniqueId)
-                    .collect(Collectors.toSet());
+            // First, hide this player from ALL other players
+            hidePlayerFromAll(player);
+
+            // Then show only match players to this player and vice versa
+            Set<UUID> canSeeUUIDs = new HashSet<>(matchPlayerUUIDs);
+            canSeeUUIDs.remove(player.getUniqueId()); // Remove self
 
             vanishManager.setCanSee(player.getUniqueId(), canSeeUUIDs);
 
-            // Hide all players first, then show only match players
-            for (Player onlinePlayer : org.bukkit.Bukkit.getOnlinePlayers()) {
-                if (onlinePlayer != player) {
-                    if (matchPlayers.contains(onlinePlayer)) {
-                        // Show match players
-                        player.showPlayer(onlinePlayer);
-                    } else {
-                        // Hide non-match players
-                        player.hidePlayer(onlinePlayer);
-                    }
+            // Actually show/hide players based on the visibility rules
+            for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
+                if (onlinePlayer == player) continue;
+
+                if (matchPlayerUUIDs.contains(onlinePlayer.getUniqueId())) {
+                    // Show match players to each other
+                    player.showPlayer(onlinePlayer);
+                    onlinePlayer.showPlayer(player);
+
+                    // Ensure both players can see each other in vanish manager
+                    vanishManager.addCanSee(player.getUniqueId(), onlinePlayer.getUniqueId());
+                    vanishManager.addCanSee(onlinePlayer.getUniqueId(), player.getUniqueId());
+                } else {
+                    // Hide non-match players
+                    player.hidePlayer(onlinePlayer);
+                    onlinePlayer.hidePlayer(player);
+
+                    // Remove visibility in vanish manager
+                    vanishManager.removeCanSee(player.getUniqueId(), onlinePlayer.getUniqueId());
+                    vanishManager.removeCanSee(onlinePlayer.getUniqueId(), player.getUniqueId());
                 }
             }
 
-            // Update nametags for this player
             updateNametags(player);
+        }
+
+        // Also update spectators if any
+        for (UUID spectatorUUID : match.getSpectators()) {
+            Player spectator = Bukkit.getPlayer(spectatorUUID);
+            if (spectator != null) {
+                setupSpectatorVanish(spectator, match);
+            }
         }
     }
 
@@ -109,6 +132,9 @@ public class VanishUtil {
                 vanishManager.removeCanSee(onlinePlayer.getUniqueId(), player.getUniqueId());
             }
         }
+
+        // Clear this player's can-see list
+        vanishManager.setCanSee(player.getUniqueId(), new HashSet<>());
     }
 
     /**
@@ -117,36 +143,62 @@ public class VanishUtil {
     public static void showPlayerToAll(Player player) {
         VanishManager vanishManager = getVanishManager();
 
+        Set<UUID> canSeeUUIDs = new HashSet<>();
         for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
             if (onlinePlayer != player) {
                 onlinePlayer.showPlayer(player);
                 vanishManager.addCanSee(onlinePlayer.getUniqueId(), player.getUniqueId());
+                canSeeUUIDs.add(onlinePlayer.getUniqueId());
             }
         }
+
+        vanishManager.setCanSee(player.getUniqueId(), canSeeUUIDs);
     }
 
     /**
-     * Set up vanish for spectators
+     * Set up vanish for spectators - FIXED VERSION
      */
     public static void setupSpectatorVanish(Player spectator, Match match) {
         VanishManager vanishManager = getVanishManager();
 
-        // Spectator can see all match players
+        // First hide spectator from everyone
+        hidePlayerFromAll(spectator);
+
+        // Spectator can see all match players, but match players cannot see spectator
         Set<UUID> canSeeUUIDs = match.getBukkitPlayers().stream()
                 .map(Player::getUniqueId)
                 .collect(Collectors.toSet());
 
         vanishManager.setCanSee(spectator.getUniqueId(), canSeeUUIDs);
 
-        // Match players cannot see spectator
+        // Apply visibility settings
         for (Player matchPlayer : match.getBukkitPlayers()) {
-            matchPlayer.hidePlayer(spectator);
-            spectator.showPlayer(matchPlayer);
+            matchPlayer.hidePlayer(spectator); // Match players can't see spectator
+            spectator.showPlayer(matchPlayer);  // Spectator can see match players
+
+            // Remove spectator from match player's can-see list
+            vanishManager.removeCanSee(matchPlayer.getUniqueId(), spectator.getUniqueId());
         }
+
+        // Spectators should also be able to see other spectators
+        for (UUID otherSpectatorUUID : match.getSpectators()) {
+            if (!otherSpectatorUUID.equals(spectator.getUniqueId())) {
+                Player otherSpectator = Bukkit.getPlayer(otherSpectatorUUID);
+                if (otherSpectator != null) {
+                    spectator.showPlayer(otherSpectator);
+                    otherSpectator.showPlayer(spectator);
+
+                    vanishManager.addCanSee(spectator.getUniqueId(), otherSpectatorUUID);
+                    vanishManager.addCanSee(otherSpectatorUUID, spectator.getUniqueId());
+                }
+            }
+        }
+
+        updateNametags(spectator);
     }
 
     /**
-     * Smart vanish setup based on player state
+     * Smart vanish setup based on player state - ENHANCED VERSION
      */
     public static void updatePlayerVanish(Player player) {
         PracticePlayer practicePlayer = PracticePlayer.getPracticePlayer(player.getUniqueId());
@@ -158,29 +210,39 @@ public class VanishUtil {
 
         switch (practicePlayer.getPlayerState()) {
             case LOBBY:
-            case QUEUEING:  // Players in queue should still see each other
+            case QUEUEING:
                 showAllPlayers(player);
                 break;
 
             case PLAYING:
-                if (practicePlayer.getCurrentMatch() != null) {
-                    showMatchPlayers(practicePlayer.getCurrentMatch());
+                Match currentMatch = practicePlayer.getCurrentMatch();
+                if (currentMatch != null) {
+                    // Use the fixed showMatchPlayers method
+                    showMatchPlayers(currentMatch);
+                } else {
+                    // Fallback to lobby visibility if no match
+                    showAllPlayers(player);
                 }
                 break;
 
             case SPECTATING:
-                if (practicePlayer.getSpectatingMatch() != null) {
-                    setupSpectatorVanish(player, practicePlayer.getSpectatingMatch());
+                Match spectatingMatch = practicePlayer.getSpectatingMatch();
+                if (spectatingMatch != null) {
+                    setupSpectatorVanish(player, spectatingMatch);
+                } else {
+                    // Fallback to lobby visibility if no match to spectate
+                    showAllPlayers(player);
                 }
                 break;
 
             case EDITING:
                 hideAllPlayers(player);
                 break;
-        }
 
-        // Always update nametags when player state changes
-        updateNametags(player);
+            default:
+                showAllPlayers(player);
+                break;
+        }
     }
 
     /**
@@ -188,5 +250,40 @@ public class VanishUtil {
      */
     public static boolean shouldSeeEachOther(Player viewer, Player target) {
         return getVanishManager().shouldShowSource(target.getUniqueId(), viewer.getUniqueId());
+    }
+
+    /**
+     * Force refresh vanish for all online players - useful for debugging
+     */
+    public static void refreshAllVanish() {
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            updatePlayerVanish(player);
+        }
+    }
+
+    /**
+     * Clean up vanish data for a match when it ends
+     */
+    public static void cleanupMatchVanish(Match match) {
+        Set<Player> matchPlayers = match.getBukkitPlayers();
+
+        // Reset all match players to lobby visibility
+        for (Player player : matchPlayers) {
+            PracticePlayer practicePlayer = PracticePlayer.getPracticePlayer(player.getUniqueId());
+            if (practicePlayer != null && !practicePlayer.isInMatch()) {
+                showAllPlayers(player);
+            }
+        }
+
+        // Handle spectators
+        for (UUID spectatorUUID : match.getSpectators()) {
+            Player spectator = Bukkit.getPlayer(spectatorUUID);
+            if (spectator != null) {
+                PracticePlayer practicePlayer = PracticePlayer.getPracticePlayer(spectatorUUID);
+                if (practicePlayer != null && !practicePlayer.isSpectating()) {
+                    showAllPlayers(spectator);
+                }
+            }
+        }
     }
 }

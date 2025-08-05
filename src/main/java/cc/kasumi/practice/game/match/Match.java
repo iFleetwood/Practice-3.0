@@ -181,8 +181,24 @@ public abstract class Match {
         practicePlayer.setPlayerState(PlayerState.PLAYING);
     }
 
+    // Replace the giveKit method in Match.java with this enhanced version
+
     protected void giveKit(Player player) {
-        PlayerInv kit = ladder.getDefaultKit();
+        PlayerInv kit;
+
+        // Try to get custom kit first, fall back to ladder default
+        if (ladder.isEditable()) {
+            kit = Practice.getInstance().getPlayerKitManager().getEffectiveKit(player, ladder);
+        } else {
+            kit = ladder.getDefaultKit();
+        }
+
+        if (kit == null) {
+            // Fallback to empty inventory if no kit is available
+            player.sendMessage("§cWarning: No kit available for this ladder!");
+            return;
+        }
+
         PlayerInventory inventory = player.getInventory();
         inventory.setContents(kit.getContents());
         inventory.setArmorContents(kit.getArmorContents());
@@ -247,11 +263,6 @@ public abstract class Match {
         return players;
     }
 
-    protected void showPlayersToEachOther(Collection<Player> players) {
-        // Use the enhanced vanish system for better tracking
-        VanishUtil.showMatchPlayers(this);
-    }
-
     protected void hidePlayersFromEachOther(Collection<Player> players) {
         for (Player player : players) {
             for (Player otherPlayer : players) {
@@ -277,35 +288,37 @@ public abstract class Match {
         return null;
     }
 
-    // Common match ending
+    // Add these methods to your Match.java class to properly handle vanish when matches end
+
+    protected void finishMatch() {
+        // Clean up vanish before removing the match
+        VanishUtil.cleanupMatchVanish(this);
+        matchManager.getMatches().remove(this);
+    }
+
     protected void endMatchForPlayer(Player player, boolean winner) {
         PracticePlayer practicePlayer = PracticePlayer.getPracticePlayer(player.getUniqueId());
 
         String message = getEndMessage(player, winner);
         player.sendMessage(message);
 
-        // Update ELO rating for ranked matches
-        if (ranked && practicePlayer != null) {
-            updatePlayerRating(practicePlayer, player, winner);
-        }
-        
-        // Record match result in statistics
-        if (practicePlayer != null) {
-            if (winner) {
-                practicePlayer.recordWin(ladder, ranked);
-            } else {
-                practicePlayer.recordLoss(ladder, ranked);
-            }
-        }
-
         PlayerUtil.resetPlayer(player);
         player.teleport(player.getWorld().getSpawnLocation());
         stopSpectating(player);
         player.getInventory().setContents(GameUtil.getLobbyContents());
-        VanishUtil.showAllPlayers(player);
 
+        // Set player state first
         practicePlayer.setPlayerState(PlayerState.LOBBY);
         practicePlayer.setCurrentMatch(null);
+
+        // Then update vanish - this will now show all players since they're in LOBBY state
+        VanishUtil.updatePlayerVanish(player);
+    }
+
+    // Also update the showPlayersToEachOther method
+    protected void showPlayersToEachOther(Collection<Player> players) {
+        // Use the enhanced vanish system for proper match isolation
+        VanishUtil.showMatchPlayers(this);
     }
 
     // Template method for end messages - can be overridden
@@ -360,28 +373,6 @@ public abstract class Match {
         }
 
         return new Pair<>(winnersBuilder.toString(), inventoriesComponent);
-    }
-
-    protected void finishMatch() {
-        // Handle any remaining external spectators
-        for (UUID spectatorUUID : new HashSet<>(spectators)) {
-            Player spectator = org.bukkit.Bukkit.getPlayer(spectatorUUID);
-            if (spectator != null && spectator.isOnline()) {
-                PracticePlayer practicePlayer = PracticePlayer.getPracticePlayer(spectatorUUID);
-                if (practicePlayer != null && practicePlayer.getPlayerState() == PlayerState.SPECTATING) {
-                    // Reset spectator
-                    stopSpectating(spectator);
-                    spectator.teleport(spectator.getWorld().getSpawnLocation());
-                    spectator.getInventory().setContents(GameUtil.getLobbyContents());
-                    VanishUtil.showAllPlayers(spectator);
-                    practicePlayer.setPlayerState(PlayerState.LOBBY);
-                    practicePlayer.setSpectatingMatch(null);
-                    spectator.sendMessage("§cThe match you were spectating has ended.");
-                }
-            }
-        }
-        
-        matchManager.getMatches().remove(this);
     }
 
     /**

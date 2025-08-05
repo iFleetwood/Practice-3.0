@@ -1,7 +1,9 @@
 package cc.kasumi.practice.game.queue;
 
+import cc.kasumi.practice.menu.KitEditorMenu;
 import cc.kasumi.practice.menu.SelectFFAQueueMenu;
 import cc.kasumi.practice.menu.SelectQueueMenu;
+import cc.kasumi.practice.menu.SelectTvTQueueMenu;
 import cc.kasumi.practice.player.PlayerState;
 import cc.kasumi.practice.player.PracticePlayer;
 import cc.kasumi.practice.util.GameUtil;
@@ -35,12 +37,23 @@ public class QueueListener implements Listener {
             return;
         }
 
+        PracticePlayer practicePlayer = PracticePlayer.getPracticePlayer(uuid);
+        if (practicePlayer == null) {
+            return;
+        }
+
+        // Don't allow interactions if player is not in lobby
+        if (practicePlayer.getPlayerState() != PlayerState.LOBBY) {
+            return;
+        }
+
         if (clicked.equals(PlayerItem.KIT_EDITOR.getItem())) {
             // Open kit editor menu
-            // player.openInventory(new KitEditorMenu().getInventory(player));
+            new KitEditorMenu().openMenu(player);
         }
 
         else if (clicked.equals(PlayerItem.RANKED_QUEUE.getItem())) {
+            // Open ranked queue menu
             new SelectQueueMenu(true).openMenu(player);
         }
 
@@ -56,9 +69,15 @@ public class QueueListener implements Listener {
             new SelectFFAQueueMenu(false).openMenu(player);
         }
 
-        else if (clicked.equals(PlayerItem.LEAVE_QUEUE.getItem())) {
-            PracticePlayer practicePlayer = PracticePlayer.getPracticePlayer(uuid);
+        else if (clicked.equals(PlayerItem.TVT_RANKED_QUEUE.getItem())) {
+            new SelectTvTQueueMenu(true).openMenu(player);
+        }
 
+        else if (clicked.equals(PlayerItem.TVT_UNRANKED_QUEUE.getItem())) {
+            new SelectTvTQueueMenu(false).openMenu(player);
+        }
+
+        else if (clicked.equals(PlayerItem.LEAVE_QUEUE.getItem())) {
             if (practicePlayer.getPlayerState() != PlayerState.QUEUEING) {
                 return;
             }
@@ -69,7 +88,8 @@ public class QueueListener implements Listener {
             practicePlayer.setCurrentQueue(null);
             practicePlayer.setPlayerState(PlayerState.LOBBY);
             player.getInventory().setContents(GameUtil.getLobbyContents());
-            player.updateInventory();
+
+            player.sendMessage("§cLeft the queue!");
         }
     }
 
@@ -78,6 +98,10 @@ public class QueueListener implements Listener {
         Player player = event.getPlayer();
         UUID uuid = player.getUniqueId();
         PracticePlayer practicePlayer = PracticePlayer.getPracticePlayer(uuid);
+
+        if (practicePlayer == null) {
+            return;
+        }
 
         if (practicePlayer.getPlayerState() != PlayerState.QUEUEING) {
             return;

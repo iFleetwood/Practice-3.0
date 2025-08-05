@@ -6,6 +6,7 @@ import cc.kasumi.practice.game.duel.DuelRequest;
 import cc.kasumi.practice.game.ladder.Ladder;
 import cc.kasumi.practice.game.match.Match;
 import cc.kasumi.practice.game.queue.Queue;
+import cc.kasumi.practice.vanish.VanishManager;
 import cc.kasumi.practice.vanish.VanishUtil;
 import lombok.Getter;
 import lombok.Setter;
@@ -27,7 +28,7 @@ public class PracticePlayer {
     private PlayerState playerState = PlayerState.LOBBY;
     private PlayerElo elo = new PlayerElo(1000);
     private Map<Ladder, PlayerElo> ladderRatings = new HashMap<>();
-    
+
     // Additional statistics for MongoDB
     private Map<Ladder, Integer> ladderWins = new HashMap<>();
     private Map<Ladder, Integer> ladderLosses = new HashMap<>();
@@ -60,12 +61,12 @@ public class PracticePlayer {
         this.playerState = PlayerState.LOBBY;
         this.elo = new PlayerElo(1000);
         this.builder = false;
-        
+
         // Initialize default ratings and statistics for all ladders
         initializeLadderRatings();
         initializeLadderStats();
     }
-    
+
     private void initializeLadderRatings() {
         // Initialize ratings for all existing ladders
         for (Ladder ladder : Practice.getInstance().getLadders().values()) {
@@ -74,7 +75,7 @@ public class PracticePlayer {
             }
         }
     }
-    
+
     private void initializeLadderStats() {
         // Initialize statistics for all existing ladders
         for (Ladder ladder : Practice.getInstance().getLadders().values()) {
@@ -90,22 +91,22 @@ public class PracticePlayer {
             ladderBestRankedWinStreaks.putIfAbsent(ladder, 0);
         }
     }
-    
+
     /**
      * Record a win for a specific ladder
      */
     public void recordWin(Ladder ladder, boolean ranked) {
         // Update total wins
         ladderWins.put(ladder, ladderWins.getOrDefault(ladder, 0) + 1);
-        
+
         // Update ranked/unranked specific wins
         if (ranked) {
             ladderRankedWins.put(ladder, ladderRankedWins.getOrDefault(ladder, 0) + 1);
-            
+
             // Update ranked win streak
             int currentRankedStreak = ladderRankedWinStreaks.getOrDefault(ladder, 0) + 1;
             ladderRankedWinStreaks.put(ladder, currentRankedStreak);
-            
+
             // Update best ranked win streak if current is better
             int bestRankedStreak = ladderBestRankedWinStreaks.getOrDefault(ladder, 0);
             if (currentRankedStreak > bestRankedStreak) {
@@ -114,25 +115,25 @@ public class PracticePlayer {
         } else {
             ladderUnrankedWins.put(ladder, ladderUnrankedWins.getOrDefault(ladder, 0) + 1);
         }
-        
+
         // Update overall win streak
         int currentStreak = ladderWinStreaks.getOrDefault(ladder, 0) + 1;
         ladderWinStreaks.put(ladder, currentStreak);
-        
+
         // Update best overall win streak if current is better
         int bestStreak = ladderBestWinStreaks.getOrDefault(ladder, 0);
         if (currentStreak > bestStreak) {
             ladderBestWinStreaks.put(ladder, currentStreak);
         }
     }
-    
+
     /**
      * Record a loss for a specific ladder
      */
     public void recordLoss(Ladder ladder, boolean ranked) {
         // Update total losses
         ladderLosses.put(ladder, ladderLosses.getOrDefault(ladder, 0) + 1);
-        
+
         // Update ranked/unranked specific losses
         if (ranked) {
             ladderRankedLosses.put(ladder, ladderRankedLosses.getOrDefault(ladder, 0) + 1);
@@ -140,25 +141,25 @@ public class PracticePlayer {
         } else {
             ladderUnrankedLosses.put(ladder, ladderUnrankedLosses.getOrDefault(ladder, 0) + 1);
         }
-        
+
         // Reset overall win streak
         ladderWinStreaks.put(ladder, 0);
     }
-    
+
     /**
      * Record a kill
      */
     public void recordKill() {
         totalKills++;
     }
-    
+
     /**
      * Record a death
      */
     public void recordDeath() {
         totalDeaths++;
     }
-    
+
     /**
      * Get win rate for a specific ladder
      */
@@ -166,11 +167,11 @@ public class PracticePlayer {
         int wins = ladderWins.getOrDefault(ladder, 0);
         int losses = ladderLosses.getOrDefault(ladder, 0);
         int total = wins + losses;
-        
+
         if (total == 0) return 0.0;
         return (double) wins / total * 100.0;
     }
-    
+
     /**
      * Get ranked win rate for a specific ladder
      */
@@ -178,11 +179,11 @@ public class PracticePlayer {
         int wins = ladderRankedWins.getOrDefault(ladder, 0);
         int losses = ladderRankedLosses.getOrDefault(ladder, 0);
         int total = wins + losses;
-        
+
         if (total == 0) return 0.0;
         return (double) wins / total * 100.0;
     }
-    
+
     /**
      * Get unranked win rate for a specific ladder
      */
@@ -190,11 +191,11 @@ public class PracticePlayer {
         int wins = ladderUnrankedWins.getOrDefault(ladder, 0);
         int losses = ladderUnrankedLosses.getOrDefault(ladder, 0);
         int total = wins + losses;
-        
+
         if (total == 0) return 0.0;
         return (double) wins / total * 100.0;
     }
-    
+
     /**
      * Get kill/death ratio
      */
@@ -202,42 +203,42 @@ public class PracticePlayer {
         if (totalDeaths == 0) return totalKills;
         return (double) totalKills / totalDeaths;
     }
-    
+
     /**
      * Get total matches played for a ladder
      */
     public int getTotalMatches(Ladder ladder) {
         return ladderWins.getOrDefault(ladder, 0) + ladderLosses.getOrDefault(ladder, 0);
     }
-    
+
     /**
      * Get total ranked matches played for a ladder
      */
     public int getTotalRankedMatches(Ladder ladder) {
         return ladderRankedWins.getOrDefault(ladder, 0) + ladderRankedLosses.getOrDefault(ladder, 0);
     }
-    
+
     /**
      * Get total unranked matches played for a ladder
      */
     public int getTotalUnrankedMatches(Ladder ladder) {
         return ladderUnrankedWins.getOrDefault(ladder, 0) + ladderUnrankedLosses.getOrDefault(ladder, 0);
     }
-    
+
     /**
      * Get ELO rating for a specific ladder
      */
     public PlayerElo getLadderElo(Ladder ladder) {
         return ladderRatings.computeIfAbsent(ladder, k -> new PlayerElo(1000));
     }
-    
+
     /**
      * Set ELO rating for a specific ladder
      */
     public void setLadderElo(Ladder ladder, PlayerElo elo) {
         ladderRatings.put(ladder, elo);
     }
-    
+
     /**
      * Get overall ELO (average of all ladder ratings)
      */
@@ -245,22 +246,22 @@ public class PracticePlayer {
         if (ladderRatings.isEmpty()) {
             return elo; // Fallback to global elo
         }
-        
+
         int totalRating = ladderRatings.values().stream()
                 .mapToInt(PlayerElo::getRating)
                 .sum();
         int averageRating = totalRating / ladderRatings.size();
-        
+
         return new PlayerElo(averageRating);
     }
-    
+
     /**
      * Get ladder-specific ELO rating as integer for convenience
      */
     public int getLadderRating(Ladder ladder) {
         return getLadderElo(ladder).getRating();
     }
-    
+
     /**
      * Get all ladder ratings for display
      */
@@ -288,11 +289,11 @@ public class PracticePlayer {
             if (result.containsKey("elo")) {
                 elo = new PlayerElo(result.getInteger("elo"));
             }
-            
+
             // Load basic statistics
             totalKills = result.getInteger("totalKills", 0);
             totalDeaths = result.getInteger("totalDeaths", 0);
-            
+
             // Handle timestamps safely
             if (result.containsKey("firstJoined")) {
                 Object firstJoinedObj = result.get("firstJoined");
@@ -306,7 +307,7 @@ public class PracticePlayer {
             } else {
                 firstJoined = System.currentTimeMillis();
             }
-            
+
             if (result.containsKey("lastSeen")) {
                 Object lastSeenObj = result.get("lastSeen");
                 if (lastSeenObj instanceof Long) {
@@ -319,7 +320,7 @@ public class PracticePlayer {
             } else {
                 lastSeen = System.currentTimeMillis();
             }
-            
+
             // Load per-ladder ratings
             if (result.containsKey("ladderRatings")) {
                 Document ladderRatingsDoc = result.get("ladderRatings", Document.class);
@@ -331,7 +332,7 @@ public class PracticePlayer {
                     }
                 }
             }
-            
+
             // Load per-ladder wins
             if (result.containsKey("ladderWins")) {
                 Document ladderWinsDoc = result.get("ladderWins", Document.class);
@@ -342,7 +343,7 @@ public class PracticePlayer {
                     }
                 }
             }
-            
+
             // Load per-ladder losses
             if (result.containsKey("ladderLosses")) {
                 Document ladderLossesDoc = result.get("ladderLosses", Document.class);
@@ -353,7 +354,7 @@ public class PracticePlayer {
                     }
                 }
             }
-            
+
             // Load per-ladder ranked wins
             if (result.containsKey("ladderRankedWins")) {
                 Document ladderRankedWinsDoc = result.get("ladderRankedWins", Document.class);
@@ -364,7 +365,7 @@ public class PracticePlayer {
                     }
                 }
             }
-            
+
             // Load per-ladder ranked losses
             if (result.containsKey("ladderRankedLosses")) {
                 Document ladderRankedLossesDoc = result.get("ladderRankedLosses", Document.class);
@@ -375,7 +376,7 @@ public class PracticePlayer {
                     }
                 }
             }
-            
+
             // Load per-ladder unranked wins
             if (result.containsKey("ladderUnrankedWins")) {
                 Document ladderUnrankedWinsDoc = result.get("ladderUnrankedWins", Document.class);
@@ -386,7 +387,7 @@ public class PracticePlayer {
                     }
                 }
             }
-            
+
             // Load per-ladder unranked losses
             if (result.containsKey("ladderUnrankedLosses")) {
                 Document ladderUnrankedLossesDoc = result.get("ladderUnrankedLosses", Document.class);
@@ -397,7 +398,7 @@ public class PracticePlayer {
                     }
                 }
             }
-            
+
             // Load per-ladder win streaks
             if (result.containsKey("ladderWinStreaks")) {
                 Document ladderWinStreaksDoc = result.get("ladderWinStreaks", Document.class);
@@ -408,7 +409,7 @@ public class PracticePlayer {
                     }
                 }
             }
-            
+
             // Load per-ladder best win streaks
             if (result.containsKey("ladderBestWinStreaks")) {
                 Document ladderBestWinStreaksDoc = result.get("ladderBestWinStreaks", Document.class);
@@ -419,7 +420,7 @@ public class PracticePlayer {
                     }
                 }
             }
-            
+
             // Load per-ladder ranked win streaks
             if (result.containsKey("ladderRankedWinStreaks")) {
                 Document ladderRankedWinStreaksDoc = result.get("ladderRankedWinStreaks", Document.class);
@@ -430,7 +431,7 @@ public class PracticePlayer {
                     }
                 }
             }
-            
+
             // Load per-ladder best ranked win streaks
             if (result.containsKey("ladderBestRankedWinStreaks")) {
                 Document ladderBestRankedWinStreaksDoc = result.get("ladderBestRankedWinStreaks", Document.class);
@@ -441,7 +442,7 @@ public class PracticePlayer {
                     }
                 }
             }
-            
+
             // Initialize any missing ladder data
             initializeLadderRatings();
             initializeLadderStats();
@@ -468,84 +469,84 @@ public class PracticePlayer {
                 .append("totalDeaths", totalDeaths)
                 .append("firstJoined", firstJoined)
                 .append("lastSeen", System.currentTimeMillis()); // Update last seen on save
-        
+
         // Save per-ladder ratings
         Document ladderRatingsDoc = new Document();
         for (Map.Entry<Ladder, PlayerElo> entry : ladderRatings.entrySet()) {
             ladderRatingsDoc.append(entry.getKey().getName(), entry.getValue().getRating());
         }
         doc.append("ladderRatings", ladderRatingsDoc);
-        
+
         // Save per-ladder wins
         Document ladderWinsDoc = new Document();
         for (Map.Entry<Ladder, Integer> entry : ladderWins.entrySet()) {
             ladderWinsDoc.append(entry.getKey().getName(), entry.getValue());
         }
         doc.append("ladderWins", ladderWinsDoc);
-        
+
         // Save per-ladder losses
         Document ladderLossesDoc = new Document();
         for (Map.Entry<Ladder, Integer> entry : ladderLosses.entrySet()) {
             ladderLossesDoc.append(entry.getKey().getName(), entry.getValue());
         }
         doc.append("ladderLosses", ladderLossesDoc);
-        
+
         // Save per-ladder ranked wins
         Document ladderRankedWinsDoc = new Document();
         for (Map.Entry<Ladder, Integer> entry : ladderRankedWins.entrySet()) {
             ladderRankedWinsDoc.append(entry.getKey().getName(), entry.getValue());
         }
         doc.append("ladderRankedWins", ladderRankedWinsDoc);
-        
+
         // Save per-ladder ranked losses
         Document ladderRankedLossesDoc = new Document();
         for (Map.Entry<Ladder, Integer> entry : ladderRankedLosses.entrySet()) {
             ladderRankedLossesDoc.append(entry.getKey().getName(), entry.getValue());
         }
         doc.append("ladderRankedLosses", ladderRankedLossesDoc);
-        
+
         // Save per-ladder unranked wins
         Document ladderUnrankedWinsDoc = new Document();
         for (Map.Entry<Ladder, Integer> entry : ladderUnrankedWins.entrySet()) {
             ladderUnrankedWinsDoc.append(entry.getKey().getName(), entry.getValue());
         }
         doc.append("ladderUnrankedWins", ladderUnrankedWinsDoc);
-        
+
         // Save per-ladder unranked losses
         Document ladderUnrankedLossesDoc = new Document();
         for (Map.Entry<Ladder, Integer> entry : ladderUnrankedLosses.entrySet()) {
             ladderUnrankedLossesDoc.append(entry.getKey().getName(), entry.getValue());
         }
         doc.append("ladderUnrankedLosses", ladderUnrankedLossesDoc);
-        
+
         // Save per-ladder win streaks
         Document ladderWinStreaksDoc = new Document();
         for (Map.Entry<Ladder, Integer> entry : ladderWinStreaks.entrySet()) {
             ladderWinStreaksDoc.append(entry.getKey().getName(), entry.getValue());
         }
         doc.append("ladderWinStreaks", ladderWinStreaksDoc);
-        
+
         // Save per-ladder best win streaks
         Document ladderBestWinStreaksDoc = new Document();
         for (Map.Entry<Ladder, Integer> entry : ladderBestWinStreaks.entrySet()) {
             ladderBestWinStreaksDoc.append(entry.getKey().getName(), entry.getValue());
         }
         doc.append("ladderBestWinStreaks", ladderBestWinStreaksDoc);
-        
+
         // Save per-ladder ranked win streaks
         Document ladderRankedWinStreaksDoc = new Document();
         for (Map.Entry<Ladder, Integer> entry : ladderRankedWinStreaks.entrySet()) {
             ladderRankedWinStreaksDoc.append(entry.getKey().getName(), entry.getValue());
         }
         doc.append("ladderRankedWinStreaks", ladderRankedWinStreaksDoc);
-        
+
         // Save per-ladder best ranked win streaks
         Document ladderBestRankedWinStreaksDoc = new Document();
         for (Map.Entry<Ladder, Integer> entry : ladderBestRankedWinStreaks.entrySet()) {
             ladderBestRankedWinStreaksDoc.append(entry.getKey().getName(), entry.getValue());
         }
         doc.append("ladderBestRankedWinStreaks", ladderBestRankedWinStreaksDoc);
-        
+
         return doc;
     }
 
@@ -577,55 +578,55 @@ public class PracticePlayer {
         return Practice.getInstance().getPlayers().get(uuid);
     }
 
-    // Enhanced setters with vanish integration
-    public void setPlayerState(PlayerState playerState) {
-        this.playerState = playerState;
+    // Enhanced setters with vanish integration for PracticePlayer.java
+
+    public void setPlayerState(PlayerState newState) {
+        PlayerState oldState = this.playerState;
+        this.playerState = newState;
 
         // Update vanish when player state changes
         Player player = getPlayer();
         if (player != null && player.isOnline()) {
             VanishUtil.updatePlayerVanish(player);
-            
-            // Update nametags when state changes
-            cc.kasumi.practice.nametag.NametagManager nametagManager = Practice.getInstance().getNametagManager();
-            cc.kasumi.practice.nametag.PlayerNametag playerNametag = nametagManager.getNametags().get(player.getUniqueId());
-            if (playerNametag != null) {
-                nametagManager.updateNametag(playerNametag);
-            }
         }
     }
 
     public void setCurrentMatch(Match match) {
+        Match oldMatch = this.currentMatch;
         this.currentMatch = match;
+
+        // Update match tracking in vanish manager
+        VanishManager vanishManager = Practice.getInstance().getVanishManager();
+        if (match != null) {
+            vanishManager.setPlayerMatch(this.uuid, match.getIdentifier());
+        } else {
+            vanishManager.setPlayerMatch(this.uuid, null);
+        }
 
         // Update vanish when match changes
         Player player = getPlayer();
         if (player != null && player.isOnline()) {
             VanishUtil.updatePlayerVanish(player);
-            
-            // Update nametags when match changes
-            cc.kasumi.practice.nametag.NametagManager nametagManager = Practice.getInstance().getNametagManager();
-            cc.kasumi.practice.nametag.PlayerNametag playerNametag = nametagManager.getNametags().get(player.getUniqueId());
-            if (playerNametag != null) {
-                nametagManager.updateNametag(playerNametag);
-            }
         }
     }
 
     public void setSpectatingMatch(Match match) {
+        Match oldMatch = this.spectatingMatch;
         this.spectatingMatch = match;
+
+        // Update match tracking for spectating
+        VanishManager vanishManager = Practice.getInstance().getVanishManager();
+        if (match != null) {
+            // Use a special prefix for spectating matches to distinguish from playing
+            vanishManager.setPlayerMatch(this.uuid, match.getIdentifier());
+        } else {
+            vanishManager.setPlayerMatch(this.uuid, null);
+        }
 
         // Update vanish when spectating changes
         Player player = getPlayer();
         if (player != null && player.isOnline()) {
             VanishUtil.updatePlayerVanish(player);
-            
-            // Update nametags when spectating changes
-            cc.kasumi.practice.nametag.NametagManager nametagManager = Practice.getInstance().getNametagManager();
-            cc.kasumi.practice.nametag.PlayerNametag playerNametag = nametagManager.getNametags().get(player.getUniqueId());
-            if (playerNametag != null) {
-                nametagManager.updateNametag(playerNametag);
-            }
         }
     }
 }

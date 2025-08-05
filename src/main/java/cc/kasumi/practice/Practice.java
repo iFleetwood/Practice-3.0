@@ -16,7 +16,9 @@ import cc.kasumi.practice.game.match.MatchManager;
 import cc.kasumi.practice.game.queue.*;
 import cc.kasumi.practice.game.queue.Queue;
 import cc.kasumi.practice.game.queue.type.FFAQueue;
+import cc.kasumi.practice.game.queue.type.PartyQueue;
 import cc.kasumi.practice.game.queue.type.SoloQueue;
+import cc.kasumi.practice.kit.PlayerKitManager;
 import cc.kasumi.practice.listener.*;
 import cc.kasumi.practice.nametag.NametagManager;
 import cc.kasumi.practice.nametag.PlayerNametag;
@@ -50,6 +52,7 @@ public final class Practice extends JavaPlugin {
     private MDatabase mDatabase;
     private boolean connectionEstablished = false;
 
+    private PlayerKitManager playerKitManager;
     private NametagManager nametagManager;
     private CacheManager cacheManager;
     private MatchManager matchManager;
@@ -140,9 +143,11 @@ public final class Practice extends JavaPlugin {
         this.arenaManager = new ArenaManager();
         this.vanishManager = new VanishManager();
         this.scoreboardManager = new ScoreboardManager(this);
-        this.nametagManager = new NametagManager(this);  // Add this line
+        this.nametagManager = new NametagManager(this);
+        this.playerKitManager = new PlayerKitManager(); // Add this line
         this.paperCommandManager = new PaperCommandManager(this);
     }
+
 
     private void registerListeners() {
         PluginManager pluginManager = Bukkit.getPluginManager();
@@ -171,8 +176,49 @@ public final class Practice extends JavaPlugin {
         paperCommandManager.registerCommand(new SpectatorCommand());
         paperCommandManager.registerCommand(new VanishTestCommand());
         paperCommandManager.registerCommand(new NametagTestCommand()); // Add this line
-        paperCommandManager.registerCommand(new cc.kasumi.practice.command.StatsCommand());
-        paperCommandManager.registerCommand(new cc.kasumi.practice.command.LeaderboardCommand());
+        paperCommandManager.registerCommand(new StatsCommand());
+        paperCommandManager.registerCommand(new LeaderboardCommand());
+        paperCommandManager.registerCommand(new KitAdminCommand());
+        paperCommandManager.registerCommand(new LadderCommand());
+    }
+
+    public void reloadLadders() {
+        // Save existing ladders
+        ladders.values().forEach(Ladder::save);
+
+        // Clear existing data
+        ladders.clear();
+        queueManager.getQueues().clear();
+
+        // Reload ladders from config
+        ConfigCursor laddersCursor = new ConfigCursor(laddersConfig, "ladders");
+
+        for (String ladderName : laddersCursor.getKeys()) {
+            ladderName = ladderName.toLowerCase();
+            Ladder ladder = new Ladder(ladderName);
+            ladder.load();
+
+            ladders.put(ladderName, ladder);
+        }
+
+        // Recreate queues
+        Map<String, Queue> queues = queueManager.getQueues();
+
+        for (Ladder ladder : ladders.values()) {
+            String ladderName = ladder.getName();
+
+            // Create ranked queues
+            if (ladder.isRanked()) {
+                queues.put(ladderName + "_ranked", new SoloQueue(ladderName + "_ranked", ladder, true));
+                queues.put(ladderName + "_ffa_ranked", new FFAQueue(ladderName + "_ffa_ranked", ladder, true));
+                queues.put(ladderName + "_2v2_ranked", new PartyQueue(ladderName + "_2v2_ranked", ladder, true, 2));
+            }
+
+            // Create unranked queues
+            queues.put(ladderName + "_unranked", new SoloQueue(ladderName + "_unranked", ladder, false));
+            queues.put(ladderName + "_ffa_unranked", new FFAQueue(ladderName + "_ffa_unranked", ladder, false));
+            queues.put(ladderName + "_2v2_unranked", new PartyQueue(ladderName + "_2v2_unranked", ladder, false, 2));
+        }
     }
 
     private void savePracticeData() {
